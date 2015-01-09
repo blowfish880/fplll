@@ -35,11 +35,15 @@ public:
                const vector<FT>& subTree, int first, int last,
                const vector<double>& pruning);
 
+  template<class FT>
+  static void enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
+               Evaluator<FT>& evaluator, int first, int last);
 private:
   static const int DMAX = 150;
   static enumf mut[DMAX][DMAX];
   static enumf centerPartSums[DMAX][DMAX + 1];
-  static EnumfVect rdiag, x, dx, ddx, dist, center, centerPartSum, maxDists, centerLoopBg;
+  static enumf c;
+  static EnumfVect rdiag, x, dx, ddx, dist, center, centerPartSum, maxDists, centerLoopBg, alpha, l;
   static int d;
   static int k;              // Current level in the enumeration
   static int kEnd;           // The algorithm stops when k = kEnd

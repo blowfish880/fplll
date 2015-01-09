@@ -19,6 +19,7 @@ FPLLL_BEGIN_NAMESPACE
 
 enumf Enumeration::mut[DMAX][DMAX];
 enumf Enumeration::centerPartSums[DMAX][DMAX + 1];
+enumf Enumeration::c;
 EnumfVect Enumeration::rdiag;
 EnumfVect Enumeration::x;
 EnumfVect Enumeration::dx;
@@ -28,6 +29,8 @@ EnumfVect Enumeration::center;
 EnumfVect Enumeration::centerPartSum;
 EnumfVect Enumeration::maxDists;
 EnumfVect Enumeration::centerLoopBg;
+EnumfVect Enumeration::alpha;
+EnumfVect Enumeration::l;
 int Enumeration::d;
 int Enumeration::k;
 int Enumeration::kEnd;
@@ -234,6 +237,117 @@ void Enumeration::enumerateDouble(MatGSO<Z_NR<double>, FP_NR<double> >& gso,
   prepareEnumeration(maxDist, EMPTY_DOUBLE_VECT, true);
   enumerate(maxDist, 0, evaluator, pruning);
   fMaxDist = maxDist;
+}
+
+template<class FT>
+void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
+               Evaluator<FT>& evaluator, int first, int last) {
+  enumf maxDist;
+  FT fR, fMu, fMaxDistNorm;
+  long rExpo, normExp = LONG_MIN;
+
+  if (last == -1) last = gso.d;
+  d = last - first;
+
+  FPLLL_CHECK(d <= DMAX, "enumerate: dimension is too high");
+  
+  //~ cout << "r:" << endl;
+  // FT->enumf conversion and transposition of mu
+  for (int i = 0; i < d; i++) {
+    fR = gso.getRExp(i + first, i + first, rExpo);
+    normExp = max(normExp, rExpo + fR.exponent());
+    
+    //~ cout << fR << ", ";
+  }
+  //~ cout << endl;
+
+  fMaxDistNorm.mul_2si(fMaxDist, maxDistExpo - normExp);
+  maxDist = fMaxDistNorm.get_d(GMP_RNDU);
+  maxDist = 1.0/maxDist;
+  //~ cout << "maxDistf " << maxDist << endl;
+  
+  //~ cout << "mu:" << endl;
+  for (int i = 0; i < d; i++) {
+    fR = gso.getRExp(i + first, i + first, rExpo);
+    fR.mul_2si(fR, rExpo - normExp);
+    rdiag[i] = fR.get_d();
+
+    for (int j = i + 1; j < d; j++) {
+      gso.getMu(fMu, j + first, i + first);
+      mut[i][j] = fMu.get_d();
+      //~ cout << mut[i][j] << ", ";
+    }
+    //~ cout << endl;
+    
+    l[i] = enumf(0.0);
+    alpha[i] = enumf(0.0);
+    x[i] = enumf(0.0);
+  }
+  
+  //~ cout << "alpha: " << endl;
+  //~ for (int i = 0; i < d; i++) {
+    //~ cout << alpha[i] << ", ";
+  //~ }
+  //~ cout << endl;
+  
+  vector<FT> fX(d);
+  dx[0] = enumf(1.0);
+  k = 0;
+  //~ cout << "starting enum" << endl;
+  while (k >= 0) {
+    //~ cout << k << ", " << maxDist << ", " << l[k] << ", " << rdiag[k];
+    //~ for (int i = 0; i <= k; i++) {
+      //~ cout  << ", " << x[i];
+    //~ }
+    //~ cout << endl;
+    if (l[k] < maxDist) {
+      if (k < d - 1) {
+        // next level
+        k++;
+        c = 0.0;
+        for (int j = 0; j < k; j++) {
+          c += mut[j][k]*alpha[j]*rdiag[j];
+        }
+        x[k] = rint(c);
+        alpha[k] = (x[k] - c)/rdiag[k];
+        l[k] = alpha[k]*alpha[k]*rdiag[k];
+        if (k > 0) {
+          l[k] += l[k-1];
+        }
+        
+        dx[k] = (x[k] <= c) ? 1 : -1;
+        continue;
+      } else {
+        // found a solution (if not zero)
+        bool Xzero = true;
+        for (int j = 0; j < d; j++) {
+          fX[j] = x[j];
+          if (Xzero && x[j] != 0.0) {
+            Xzero = false;
+          }
+        }
+        if (!Xzero) {
+          evaluator.evalSol(fX, l[k], maxDist, normExp);
+        }
+      }
+    }
+    // vector too large or solution found - backtrack
+		k--;
+		if (k >= 0) {
+			// next x[k]/alpha[k]
+			x[k] += dx[k];
+			alpha[k] += dx[k]/rdiag[k];
+			l[k] = alpha[k]*alpha[k]*rdiag[k];
+			if (k > 0) {
+        l[k] += l[k-1];
+        ddx[k] = (dx[k] < 0)? -1.0 : 1.0;
+				dx[k] = -1.0*(dx[k] + ddx[k]);
+      }
+    }
+  }
+  
+  fMaxDistNorm = 1.0/maxDist; // Exact
+  fMaxDist.mul_2si(fMaxDistNorm, normExp - maxDistExpo);
 }
 
 FPLLL_END_NAMESPACE

@@ -214,6 +214,12 @@ enum HKZFlags {
   HKZ_VERBOSE = 1
 };
 
+enum REDMethod {
+  RED_BKZ = 0,
+  RED_SLD = 1,
+  RED_DBKZ = 4
+};
+
 FPLLL_END_NAMESPACE
 
 #endif

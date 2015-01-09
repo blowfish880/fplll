@@ -204,6 +204,7 @@ void FastEvaluator<Float>::evalSol(const FloatVect& newSolCoord,
         const enumf& newPartialDist, enumf& maxDist, long normExp) {
   // Assumes that the solution is valid
   if (evalMode == EVALMODE_SV) {
+    //~ cout << "storing solution of length " << (1/newPartialDist) << ": " << newSolCoord << endl;
     solCoord = newSolCoord;
     maxDist = newPartialDist;
     lastPartialDist = newPartialDist; // Exact conversion

@@ -31,7 +31,7 @@ public:
   blockSize(blockSize), delta(delta), flags(flags),
   maxLoops(maxLoops), maxTime(maxTime),
   autoAbort_scale(autoAbort_scale), autoAbort_maxNoDec(autoAbort_maxNoDec),
-  dumpGSOFilename("gso.log"), preprocessing(NULL) {
+  dumpGSOFilename("gso.log"), preprocessing(NULL), red_method(RED_BKZ) {
     if (linearPruningLevel > 0) {
       enableLinearPruning(linearPruningLevel);
     }
@@ -90,7 +90,8 @@ public:
     for(int k=startDescent; k<blockSize; k++)
       pruning[k] = ((double)(blockSize-k-startDescent))/blockSize;
   }
-                     
+  
+  int red_method;
 };
 
 template<class FT>
@@ -116,10 +117,15 @@ public:
   
   bool svpReduction(int kappa, int blockSize, const BKZParam &param, bool& clean);
   bool bkzLoop(const int loop, int& kappaMax, const BKZParam &param, int minRow, int maxRow, bool& clean);
+  bool dbkzLoop(const int loop, int& kappaMax, const BKZParam &param, int minRow, int maxRow, bool& clean);
+  bool sldLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean);
+  bool localPP(const BKZParam &par, int kappa, int blockSize, bool& clean);
   bool bkz();
   void dumpGSO(const std::string filename, const std::string prefix, bool append = true);
- 
+
   int status;
+  
+  bool dSvpReduction(int kappa, int blockSize, const BKZParam &param, bool& clean);
 
 private:
   void printParams(const BKZParam &param, ostream &out);

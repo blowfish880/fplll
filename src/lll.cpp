@@ -174,6 +174,7 @@ bool LLLReduction<ZT, FT>::babai(int kappa, int nCols) {
     if (iter >= 2) {
       long newMaxExpo = m.getMaxMuExp(kappa, nCols);
       if (newMaxExpo > maxExpo - SIZE_RED_FAILURE_THRESH) {
+        cerr << "babai failing on " << iter << endl;
         return setStatus(RED_BABAI_FAILURE);
       }
       maxExpo = newMaxExpo;

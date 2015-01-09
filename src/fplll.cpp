@@ -333,4 +333,116 @@ const char* getRedStatusStr(int status) {
     return "unknown error";
 }
 
+
+int dSvpReduce(IntMatrix& b, int start, int end) {
+  int gsoFlags = 0;
+  if (b.getRows() == 0 || b.getCols() == 0)
+    return RED_SUCCESS;
+  IntMatrix emptyMat;
+  //~ cout << "GSO object" << endl;
+  MatGSO<Integer, Float> mGSO(b, emptyMat, emptyMat, gsoFlags);
+  //~ cout << "LLL" << endl;
+  LLLReduction<Integer, Float> lllObj(mGSO, LLL_DEF_DELTA, LLL_DEF_ETA, LLL_DEFAULT);
+  BKZParam param;
+  param.blockSize = end - start;
+  param.delta = LLL_DEF_DELTA;
+  
+  //~ cout << "BKZ object" << endl;
+  BKZReduction<Float> bkzObj(mGSO, lllObj, param);
+  bool clean = true;
+  //~ cout << "dsvp call" << endl;
+  bkzObj.dSvpReduction(start, param.blockSize, param, clean);
+  //~ bkzObj.dumpGSO("gso.log", "DSVP");
+  //~ cout << "clean: " << clean << endl;
+  return bkzObj.status;
+}
+
+// testing
+int svpEnumDual(IntMatrix& b, IntVect& solCoord) {
+    // d = lattice dimension (note that it might decrease during preprocessing)
+  int d = b.getRows();
+
+  // Allocates space for vectors and matrices in constructors
+  IntMatrix emptyMat;
+  MatGSO<Integer, Float> gso(b, emptyMat, emptyMat, GSO_INT_GRAM);
+  Float maxDist;
+  long maxDistExpo;
+  Integer itmp1;
+
+  gso.updateGSO();
+  genZeroVect(solCoord, d);
+  
+  Evaluator<Float>* evaluator;
+  evaluator = new FastEvaluator<Float>(d, gso.getMuMatrix(),
+            gso.getRMatrix(), EVALMODE_SV);
+  evaluator->solCoord.clear();
+  
+  maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
+  
+  Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d);
+  
+  if (!evaluator->solCoord.empty()) {
+    for (int i = 0; i < d; i++) {
+      itmp1.set_f(evaluator->solCoord[i]);
+      solCoord[i].add(solCoord[i], itmp1);
+    }
+  } else {
+      solCoord[d-1] = 1;
+  }
+  
+  delete evaluator;
+  
+  return 0;
+}
+
+int dSVPReduction(IntMatrix& b) {
+  IntVect x;
+  double start = cputime();
+  svpEnumDual(b, x);
+  cout << "t_enum: " << (cputime() - start)* 0.001 << endl;
+  start = cputime();
+  
+  int d = b.getRows();
+  
+  // don't want to deal with negativ coefficients
+  for (int i = 0; i < d; i++) {
+    if (x[i] < 0) {
+      x[i].neg(x[i]);
+      for (int j = 0; j < b.getCols(); j++) {
+        b[i][j].neg(b[i][j]);
+      }
+    }
+  }
+  
+  int off = 1;
+  int k;
+	while (off < d) {
+		k = d-1;
+		while(k - off >= 0) {
+			if (x[k] != 0 || x[k-off] != 0) {
+        if (x[k] < x[k-off]) {
+          x[k].swap(x[k-off]);
+          b.swapRows(k, k-off);
+        }
+        
+        while (x[k-off] != 0) {
+          while (x[k-off] <= x[k]) {
+            x[k].sub(x[k], x[k-off]);
+            b[k].sub(b[k-off]);
+          }
+          
+          x[k].swap(x[k-off]);
+          b.swapRows(k, k-off);
+        }
+      }
+			k -= 2*off;
+    }
+		off *= 2;
+  }
+  
+  cout << "t_insert: " << (cputime() - start)* 0.001 << endl;
+  return 0;
+}
+//
+
 FPLLL_END_NAMESPACE

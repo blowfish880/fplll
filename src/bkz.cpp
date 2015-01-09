@@ -72,6 +72,127 @@ static double getCurrentSlope(MatGSO<Integer, FT>& m, int startRow, int stopRow)
   return v1 / v2;
 }
 
+template<class FT>
+bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &par, bool& clean) {
+  long maxDistExpo;
+  //~ m.updateGSO();
+  int lllStart = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
+  //~ cout << "LLL call" << endl;
+  if (!lllObj.lll(lllStart, kappa, kappa + blockSize)) {
+    return setStatus(lllObj.status);
+  }
+  if (lllObj.nSwaps > 0) {
+    clean = false;
+  }
+  
+  if (!localPP(par, kappa, blockSize, clean)) {
+    return false;
+  }
+  
+  //~ cout << "LLL done. preparing enum" << endl;
+  maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
+  deltaMaxDist.div(maxDist, delta);
+  //~ cout << "maxDist " <<  maxDist << endl;
+  //~ cout << "deltaMaxDist " <<  deltaMaxDist << endl;
+  vector<FT>& x = evaluator.solCoord;
+  x.clear();
+  //~ cout << "enum call" << endl;
+  Enumeration::enumerateDual(m, maxDist, maxDistExpo, evaluator, kappa, kappa + blockSize);
+  
+  if (maxDist <= deltaMaxDist) {
+    // basis already delta-dSVP reduced
+    //~ cout << maxDist << " <= " << deltaMaxDist << endl;
+    return true;
+  }
+  
+  //~ cout << "non trivial solution found. inserting: " << x << endl;
+  // we don't have to worry about the vector already being part of the basis
+  // the gcd procedure will take care of it automatically and very efficiently
+  int d = blockSize;
+  m.rowOpBegin(kappa, kappa + blockSize);
+  // don't want to deal with negativ coefficients
+  for (int i = 0; i < d; i++) {
+    if (x[i] < 0) {
+      x[i].neg(x[i]);
+      for (int j = 0; j < m.b.getCols(); j++) {
+        m.b[i + kappa][j].neg(m.b[i + kappa][j]);
+      }
+    }
+  }
+  //~ cout << "enum done. inserting..." << endl;
+  // tree based gcd computation on x, performing operations also on b
+  int off = 1;
+  int k;
+	while (off < d) {
+		k = d - 1;
+		while(k - off >= 0) {
+			if (!(x[k].is_zero() && x[k - off].is_zero())) {
+        if (x[k] < x[k - off]) {
+          x[k].swap(x[k - off]);
+          m.b.swapRows(kappa + k, kappa + k - off);
+        }
+        
+        while (!x[k - off].is_zero()) {
+          while (x[k - off] <= x[k]) {
+            x[k].sub(x[k], x[k - off]);
+            m.b[kappa + k].sub(m.b[kappa + k - off]);
+          }
+          
+          x[k].swap(x[k - off]);
+          m.b.swapRows(kappa + k, kappa + k - off);
+        }
+      }
+			k -= 2 * off;
+    }
+		off *= 2;
+  }
+  //~ cout << "insertion loop done" << endl;
+  m.rowOpEnd(kappa, kappa + blockSize);
+  clean = false;
+  //~ m.updateGSO();
+  //~ cout << "size reduction:" << endl;
+  if (!lllObj.sizeReduction(kappa, kappa + blockSize))
+      return setStatus(lllObj.status);
+  //~ if (!lllObj.lll(0, kappa, kappa + blockSize)) {
+    //~ return setStatus(lllObj.status);
+  //~ }
+  //~ cout << kappa << "; ";
+  //~ cout << "maxDist : " << maxDist << "; ";
+  //~ cout << "maxDistExpo old : " << maxDistExpo << "; ";
+  //~ maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
+  //~ cout << "last R : " << maxDist << "; ";
+  //~ cout << "maxDistExpo : " << maxDistExpo << "; ";
+  //~ cout << "deltaMaxDist : " << deltaMaxDist << endl;
+  //~ dumpGSO(par.dumpGSOFilename, "DSVP");
+  return true;
+}
+
+template<class FT>
+bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bool& clean) {
+  const BKZParam *preproc = par.preprocessing;
+  if (preproc && preproc->blockSize < blockSize && preproc->blockSize > 2) {
+    int dummyKappaMax = numRows;
+    BKZAutoAbort<FT> autoAbort(m, kappa + blockSize, kappa);
+    double cputimeStart2 = cputime();
+
+    for(int i=0; ; i++) {
+      if ((preproc->flags & BKZ_MAX_LOOPS) && i >= preproc->maxLoops) break;
+      if ((preproc->flags & BKZ_MAX_TIME) && (cputime() - cputimeStart2) * 0.001 >= preproc->maxTime) break;
+      if (autoAbort.testAbort(preproc->autoAbort_scale, preproc->autoAbort_maxNoDec)) break;
+
+      bool clean2 = true;
+      if (!bkzLoop(i, dummyKappaMax, *preproc, kappa, kappa + blockSize, clean2))
+        return false;
+
+      if(clean2)
+        break;
+      else
+        clean = clean2;
+    }
+  }
+  
+  return true;
+}
 
 template<class FT>
 bool BKZReduction<FT>::svpReduction(int kappa, int blockSize, const BKZParam &par, bool& clean) {
@@ -85,27 +206,9 @@ bool BKZReduction<FT>::svpReduction(int kappa, int blockSize, const BKZParam &pa
   if (lllObj.nSwaps > 0) {
     clean = false;
   }
-
-  const BKZParam *preproc = par.preprocessing;
-  if (preproc && preproc->blockSize < blockSize && preproc->blockSize > 2) {
-    int dummyKappaMax = numRows;
-    BKZAutoAbort<FT> autoAbort(m, kappa + blockSize, kappa);
-    double cputimeStart2 = cputime();
-
-    for(int i=0; ; i++) {
-      if ((par.flags & BKZ_MAX_LOOPS) && i >= par.maxLoops) break;
-      if ((par.flags & BKZ_MAX_TIME) && (cputime() - cputimeStart2) * 0.001 >= par.maxTime) break;
-      if (autoAbort.testAbort(par.autoAbort_scale, par.autoAbort_maxNoDec)) break;
-
-      bool clean2 = true;
-      if (!bkzLoop(i, dummyKappaMax, *preproc, kappa, kappa + blockSize, clean2))
-        return false;
-
-      if(clean2)
-        break;
-      else
-        clean = clean2;
-    }
+  
+  if (!localPP(par, kappa, blockSize, clean)) {
+    return false;
   }
 
   maxDist = m.getRExp(kappa, kappa, maxDistExpo);
@@ -194,6 +297,100 @@ bool BKZReduction<FT>::bkzLoop(const int loop, int& kappaMax, const BKZParam &pa
 }
 
 template<class FT>
+bool BKZReduction<FT>::dbkzLoop(const int loop, int& kappaMax, const BKZParam &par, int minRow, int maxRow, bool& clean) {
+  for (int kappa = maxRow-par.blockSize; kappa >= minRow; kappa--) {
+    // dSVP-reduces a block
+    if (!dSvpReduction(kappa, par.blockSize, par, clean)) return false;
+  }
+
+  if (par.flags & BKZ_VERBOSE) {
+    FT r0;
+    Float fr0;
+    long expo;
+    r0 = m.getRExp(minRow, minRow, expo);
+    fr0 = r0.get_d();
+    fr0.mul_2si(fr0, expo);
+    cerr << "End of DBKZ loop " << std::setw(4) << loop << ", time = " << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s";
+    cerr << ", r_" << minRow << " = " << fr0;
+    cerr << ", slope = " << std::setw( 9 ) << std::setprecision( 6 ) << getCurrentSlope(m, minRow, maxRow) << endl;
+  }
+  if (par.flags & BKZ_DUMP_GSO) {
+    std::ostringstream prefix;
+    prefix << "End of DBKZ loop " << std::setw(3) << loop;
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
+    dumpGSO(par.dumpGSOFilename, prefix.str());
+  }
+
+  return true;
+}
+
+template<class FT>
+bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean) {
+  bool clean_inner;
+  //~ std::ostringstream preLLL, preSVP, preDSVP;
+  //~ preLLL << "LLL ";
+  //~ preSVP << "SVP ";
+  //~ preDSVP << "DSVP ";
+  
+  do {
+    clean_inner = true;
+    
+    if (!lllObj.lll(0, minRow, maxRow)) {
+      return setStatus(lllObj.status);
+    }
+    if (lllObj.nSwaps > 0) {
+      //~ cout << "LLL changed basis" << endl;
+      clean_inner = false;
+    }
+    
+    //~ dumpGSO(par.dumpGSOFilename, preLLL.str());
+    
+    for (int kappa = minRow; kappa < maxRow - 1; kappa += par.blockSize) {
+      int blockSize = min(par.blockSize, maxRow - kappa);
+      if (!svpReduction(kappa, blockSize, par, clean_inner)) {
+        //~ cout << "SVP failed for block " << kappa << ":" << (kappa + blockSize) << endl;
+        return false;
+      }
+      m.updateGSO();
+    }
+    
+    //~ dumpGSO(par.dumpGSOFilename, preSVP.str());
+    
+    if (!clean_inner) {
+      //~ cout << "SVP changed basis" << endl;
+      clean = false;
+    }
+  } while (!clean_inner);
+  
+  for (int kappa = minRow + 1; kappa < maxRow - par.blockSize; kappa += par.blockSize) {
+    if (!dSvpReduction(kappa, par.blockSize, par, clean)) return false;
+    m.updateGSO();
+  }
+  //~ dumpGSO(par.dumpGSOFilename, preDSVP.str());
+  
+  if (par.flags & BKZ_VERBOSE) {
+    FT r0;
+    Float fr0;
+    long expo;
+    r0 = m.getRExp(minRow, minRow, expo);
+    fr0 = r0.get_d();
+    fr0.mul_2si(fr0, expo);
+    cerr << "End of SLD loop " << std::setw(4) << loop << ", time = " << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s";
+    cerr << ", r_" << minRow << " = " << fr0;
+    cerr << ", slope = " << std::setw( 9 ) << std::setprecision( 6 ) << getCurrentSlope(m, minRow, maxRow) << endl;
+  }
+  
+  if (par.flags & BKZ_DUMP_GSO) {
+    std::ostringstream prefix;
+    prefix << "End of SLD loop " << std::setw(4) << loop;
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
+    dumpGSO(par.dumpGSOFilename, prefix.str());
+  }
+  
+  return true;
+}
+
+template<class FT>
 bool BKZReduction<FT>::bkz() {
   int flags = param.flags;
   int finalStatus = RED_SUCCESS;
@@ -210,9 +407,19 @@ bool BKZReduction<FT>::bkz() {
   int kappaMax = 0;
   int iLoop =0;
   BKZAutoAbort<FT> autoAbort(m, numRows);
-
+  if ( (param.red_method == RED_DBKZ) && !(flags & BKZ_AUTO_ABORT) ) {
+    cerr << "Warning: need auto abort for dual BKZ. Turning it on!" << endl;
+    flags |= BKZ_AUTO_ABORT;
+  }
+  
   if (flags & BKZ_VERBOSE) {
-    cerr << "Entering BKZ:" << endl;
+    if (param.red_method == RED_SLD) {
+      cerr << "Entering SLD:" << endl;
+    } else if (param.red_method == RED_DBKZ) {
+      cerr << "Entering DBKZ:" << endl;
+    } else {
+      cerr << "Entering BKZ:" << endl;
+    }
     printParams(param, cerr);
     cerr << endl;
   }
@@ -231,7 +438,14 @@ bool BKZReduction<FT>::bkz() {
     }
     if ((flags & BKZ_AUTO_ABORT) && autoAbort.testAbort(param.autoAbort_scale, param.autoAbort_maxNoDec)) break;
     bool clean = true;
-    if (!bkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
+    if (param.red_method == RED_SLD) {
+      if (!sldLoop(iLoop, param, 0, numRows, clean)) return false;
+    } else {
+      if (param.red_method == RED_DBKZ) {
+        if (!dbkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
+      }
+      if (!bkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
+    }
     if (clean || param.blockSize >= numRows) break;
   }
   if (flags & BKZ_DUMP_GSO) {
