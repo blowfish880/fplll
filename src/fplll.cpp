@@ -358,7 +358,7 @@ int dSvpReduce(IntMatrix& b, int start, int end) {
 }
 
 // testing
-int svpEnumDual(IntMatrix& b, IntVect& solCoord) {
+int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual) {
     // d = lattice dimension (note that it might decrease during preprocessing)
   int d = b.getRows();
 
@@ -377,9 +377,17 @@ int svpEnumDual(IntMatrix& b, IntVect& solCoord) {
             gso.getRMatrix(), EVALMODE_SV);
   evaluator->solCoord.clear();
   
-  maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
-  
-  Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d);
+  if (dual) {
+    //~ cout << "enumerating dual" << endl;
+    maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
+    Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d);
+  } else {
+    vector<double> pruning;
+    const vector<Float> emptySubTree;
+    maxDist = gso.getRExp(0, 0, maxDistExpo);
+    Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
+            emptySubTree, 0, d, pruning);
+  }
   
   if (!evaluator->solCoord.empty()) {
     for (int i = 0; i < d; i++) {
@@ -398,7 +406,7 @@ int svpEnumDual(IntMatrix& b, IntVect& solCoord) {
 int dSVPReduction(IntMatrix& b) {
   IntVect x;
   double start = cputime();
-  svpEnumDual(b, x);
+  svpEnum(b, x, true);
   cout << "t_enum: " << (cputime() - start)* 0.001 << endl;
   start = cputime();
   

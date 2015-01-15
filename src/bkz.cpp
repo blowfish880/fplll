@@ -75,9 +75,8 @@ static double getCurrentSlope(MatGSO<Integer, FT>& m, int startRow, int stopRow)
 template<class FT>
 bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &par, bool& clean) {
   long maxDistExpo;
-  //~ m.updateGSO();
   int lllStart = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
-  //~ cout << "LLL call" << endl;
+  //~ cout << "LLL call from " << kappa << " to " << kappa + blockSize << endl;
   if (!lllObj.lll(lllStart, kappa, kappa + blockSize)) {
     return setStatus(lllObj.status);
   }
@@ -85,11 +84,12 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
     clean = false;
   }
   
-  if (!localPP(par, kappa, blockSize, clean)) {
+  //~ cout << "LLL done. preparing enum" << endl;
+  
+  if (!localPP(par, kappa, blockSize, clean, true)) {
     return false;
   }
   
-  //~ cout << "LLL done. preparing enum" << endl;
   maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
   deltaMaxDist.div(maxDist, delta);
   //~ cout << "maxDist " <<  maxDist << endl;
@@ -153,6 +153,16 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   //~ cout << "size reduction:" << endl;
   if (!lllObj.sizeReduction(kappa, kappa + blockSize))
       return setStatus(lllObj.status);
+  
+  // sanity check
+  maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
+  if (maxDist < deltaMaxDist) {
+    cerr << "maxDist: " << maxDist << ", ";
+    cerr << "deltaDaxDist: " << deltaMaxDist << ", ";
+    cerr << "maxDistExpo: " << maxDistExpo << endl;
+    cerr << "kappa: " << kappa << endl;
+    FPLLL_ABORT("Inserted long vector into dual!");
+  }
   //~ if (!lllObj.lll(0, kappa, kappa + blockSize)) {
     //~ return setStatus(lllObj.status);
   //~ }
@@ -168,7 +178,8 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
 }
 
 template<class FT>
-bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bool& clean) {
+bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bool& clean, bool dual) {
+  ppCputimeStart = cputime();
   const BKZParam *preproc = par.preprocessing;
   if (preproc && preproc->blockSize < blockSize && preproc->blockSize > 2) {
     int dummyKappaMax = numRows;
@@ -181,8 +192,13 @@ bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bo
       if (autoAbort.testAbort(preproc->autoAbort_scale, preproc->autoAbort_maxNoDec)) break;
 
       bool clean2 = true;
-      if (!bkzLoop(i, dummyKappaMax, *preproc, kappa, kappa + blockSize, clean2))
-        return false;
+      if (dual) {
+        if (!dbkzLoop(i, dummyKappaMax, *preproc, kappa, kappa + blockSize, clean2))
+          return false;
+      } else {
+        if (!bkzLoop(i, dummyKappaMax, *preproc, kappa, kappa + blockSize, clean2))
+          return false;
+      }
 
       if(clean2)
         break;
@@ -190,6 +206,7 @@ bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bo
         clean = clean2;
     }
   }
+  ppCputime += (cputime() - ppCputimeStart);
   
   return true;
 }
@@ -207,10 +224,10 @@ bool BKZReduction<FT>::svpReduction(int kappa, int blockSize, const BKZParam &pa
     clean = false;
   }
   
-  if (!localPP(par, kappa, blockSize, clean)) {
+  if (!localPP(par, kappa, blockSize, clean, false)) {
     return false;
   }
-
+  
   maxDist = m.getRExp(kappa, kappa, maxDistExpo);
   deltaMaxDist.mul(delta, maxDist);
   vector<FT>& solCoord = evaluator.solCoord;
@@ -298,11 +315,16 @@ bool BKZReduction<FT>::bkzLoop(const int loop, int& kappaMax, const BKZParam &pa
 
 template<class FT>
 bool BKZReduction<FT>::dbkzLoop(const int loop, int& kappaMax, const BKZParam &par, int minRow, int maxRow, bool& clean) {
+  m.updateGSO();
   for (int kappa = maxRow-par.blockSize; kappa >= minRow; kappa--) {
     // dSVP-reduces a block
     if (!dSvpReduction(kappa, par.blockSize, par, clean)) return false;
   }
-
+  
+  for (int blockSize = par.blockSize - 1; blockSize > 1; blockSize--) {
+    if (!dSvpReduction(minRow, blockSize, par, clean)) return false;
+  }
+  
   if (par.flags & BKZ_VERBOSE) {
     FT r0;
     Float fr0;
@@ -392,6 +414,13 @@ bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, 
 
 template<class FT>
 bool BKZReduction<FT>::bkz() {
+  if (param.red_method != RED_BKZ &&
+      param.red_method != RED_SLD &&
+      param.red_method != RED_DUAL &&
+      param.red_method != RED_DBKZ) {
+    FPLLL_ABORT("Unsupported reduction method!");
+  }
+  
   int flags = param.flags;
   int finalStatus = RED_SUCCESS;
 
@@ -417,13 +446,16 @@ bool BKZReduction<FT>::bkz() {
       cerr << "Entering SLD:" << endl;
     } else if (param.red_method == RED_DBKZ) {
       cerr << "Entering DBKZ:" << endl;
-    } else {
+    } else if (param.red_method == RED_DUAL) {
+      cerr << "Entering DUAL:" << endl;
+    } else if (param.red_method == RED_BKZ){
       cerr << "Entering BKZ:" << endl;
     }
     printParams(param, cerr);
     cerr << endl;
   }
   cputimeStart = cputime();
+  ppCputime = 0;
 
   m.discoverAllRows();
 
@@ -441,17 +473,22 @@ bool BKZReduction<FT>::bkz() {
     if (param.red_method == RED_SLD) {
       if (!sldLoop(iLoop, param, 0, numRows, clean)) return false;
     } else {
-      if (param.red_method == RED_DBKZ) {
+      if (param.red_method == RED_DBKZ || param.red_method == RED_DUAL) {
         if (!dbkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
       }
-      if (!bkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
+      
+      if (param.red_method == RED_DBKZ || param.red_method == RED_BKZ) {
+        if (!bkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
+      }
     }
     if (clean || param.blockSize >= numRows) break;
   }
   if (flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "Output ";
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart)* 0.001 << "s)";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart)* 0.001 << "s, ";
+    prefix << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (ppCputime * 0.001) << "s)";
+    
     dumpGSO(param.dumpGSOFilename, prefix.str());
   }
   return setStatus(finalStatus);

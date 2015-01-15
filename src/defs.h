@@ -217,6 +217,7 @@ enum HKZFlags {
 enum REDMethod {
   RED_BKZ = 0,
   RED_SLD = 1,
+  RED_DUAL = 3,
   RED_DBKZ = 4
 };
 

@@ -119,7 +119,7 @@ public:
   bool bkzLoop(const int loop, int& kappaMax, const BKZParam &param, int minRow, int maxRow, bool& clean);
   bool dbkzLoop(const int loop, int& kappaMax, const BKZParam &param, int minRow, int maxRow, bool& clean);
   bool sldLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean);
-  bool localPP(const BKZParam &par, int kappa, int blockSize, bool& clean);
+  bool localPP(const BKZParam &par, int kappa, int blockSize, bool& clean, bool dual);
   bool bkz();
   void dumpGSO(const std::string filename, const std::string prefix, bool append = true);
 
@@ -142,6 +142,7 @@ private:
   const vector<FT> emptyTarget, emptySubTree;
   FT maxDist, deltaMaxDist;
   double cputimeStart;
+  double ppCputimeStart, ppCputime;
 };
 
 template<class FT>
