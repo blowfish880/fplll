@@ -90,6 +90,7 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
     return false;
   }
   
+  m.updateGSO();
   maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
   deltaMaxDist.div(maxDist, delta);
   //~ cout << "maxDist " <<  maxDist << endl;
@@ -155,14 +156,14 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
       return setStatus(lllObj.status);
   
   // sanity check
-  maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
-  if (maxDist < deltaMaxDist) {
-    cerr << "maxDist: " << maxDist << ", ";
-    cerr << "deltaDaxDist: " << deltaMaxDist << ", ";
-    cerr << "maxDistExpo: " << maxDistExpo << endl;
-    cerr << "kappa: " << kappa << endl;
-    FPLLL_ABORT("Inserted long vector into dual!");
-  }
+  //~ maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
+  //~ if (maxDist < deltaMaxDist) {
+    //~ cerr << "maxDist: " << maxDist << ", ";
+    //~ cerr << "deltaDaxDist: " << deltaMaxDist << ", ";
+    //~ cerr << "maxDistExpo: " << maxDistExpo << endl;
+    //~ cerr << "kappa: " << kappa << endl;
+    //~ FPLLL_ABORT("Inserted long vector into dual!");
+  //~ }
   //~ if (!lllObj.lll(0, kappa, kappa + blockSize)) {
     //~ return setStatus(lllObj.status);
   //~ }
@@ -228,6 +229,7 @@ bool BKZReduction<FT>::svpReduction(int kappa, int blockSize, const BKZParam &pa
     return false;
   }
   
+  m.updateGSO();
   maxDist = m.getRExp(kappa, kappa, maxDistExpo);
   deltaMaxDist.mul(delta, maxDist);
   vector<FT>& solCoord = evaluator.solCoord;
