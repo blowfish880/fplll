@@ -143,6 +143,8 @@ private:
   FT maxDist, deltaMaxDist;
   double cputimeStart;
   double ppCputimeStart, ppCputime;
+  
+  long svpCalls;
 };
 
 template<class FT>

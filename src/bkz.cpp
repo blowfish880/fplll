@@ -152,8 +152,8 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   clean = false;
   //~ m.updateGSO();
   //~ cout << "size reduction:" << endl;
-  if (!lllObj.sizeReduction(kappa, kappa + blockSize))
-      return setStatus(lllObj.status);
+  //~ if (!lllObj.sizeReduction(kappa, kappa + blockSize))
+      //~ return setStatus(lllObj.status);
   
   // sanity check
   //~ maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
@@ -164,9 +164,9 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
     //~ cerr << "kappa: " << kappa << endl;
     //~ FPLLL_ABORT("Inserted long vector into dual!");
   //~ }
-  //~ if (!lllObj.lll(0, kappa, kappa + blockSize)) {
-    //~ return setStatus(lllObj.status);
-  //~ }
+  if (!lllObj.lll(0, kappa, kappa + blockSize)) {
+    return setStatus(lllObj.status);
+  }
   //~ cout << kappa << "; ";
   //~ cout << "maxDist : " << maxDist << "; ";
   //~ cout << "maxDistExpo old : " << maxDistExpo << "; ";
@@ -375,6 +375,7 @@ bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, 
         //~ cout << "SVP failed for block " << kappa << ":" << (kappa + blockSize) << endl;
         return false;
       }
+      svpCalls++;
       m.updateGSO();
     }
     
@@ -388,6 +389,7 @@ bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, 
   
   for (int kappa = minRow + 1; kappa < maxRow - par.blockSize; kappa += par.blockSize) {
     if (!dSvpReduction(kappa, par.blockSize, par, clean)) return false;
+    svpCalls++;
     m.updateGSO();
   }
   //~ dumpGSO(par.dumpGSOFilename, preDSVP.str());
@@ -407,7 +409,8 @@ bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, 
   if (par.flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "End of SLD loop " << std::setw(4) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s, ";
+    prefix << std::setw(9) << svpCalls << ")";
     dumpGSO(par.dumpGSOFilename, prefix.str());
   }
   
@@ -458,6 +461,7 @@ bool BKZReduction<FT>::bkz() {
   }
   cputimeStart = cputime();
   ppCputime = 0;
+  svpCalls = 0;
 
   m.discoverAllRows();
 
@@ -545,6 +549,21 @@ void BKZReduction<FT>::dumpGSO(const std::string filename, const std::string pre
     m.updateGSORow(i);
     f = m.getRExp(i, i, expo);
     logF.log(f, GMP_RNDU);
+    
+    if (isnan(logF.get_d())) {
+      cerr << m.getMuMatrix() << endl;
+      cerr << endl;
+      cerr << m.getRMatrix() << endl;
+      
+      cout << i << ": " << f << endl;
+      cout << m.updateGSO() << endl;
+      cout << i << ": " << f << endl;
+      
+      dump << std::endl;
+      dump.close();
+      FPLLL_ABORT("NaN detected!");
+    }
+    
     dump << std::setprecision(8) << logF.get_d() + expo * log(2.0) << " ";
   }
   dump << std::endl;
