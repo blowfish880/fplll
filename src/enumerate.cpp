@@ -35,6 +35,7 @@ int Enumeration::d;
 int Enumeration::k;
 int Enumeration::kEnd;
 int Enumeration::kMax;
+Z_NR<mpz_t> Enumeration::nodes;
 
 static const vector<FP_NR<double> > EMPTY_DOUBLE_VECT;
 
@@ -104,6 +105,7 @@ bool Enumeration::enumerateLoop(enumf& newMaxDist, int& newKMax) {
             << " y=" << y << " newDist=" << newDist);*/
     if (newDist <= maxDists[k]) {
       k--;
+      nodes.add_ui(nodes, 1);
       if (k < 0) {
         newMaxDist = newDist;
         newKMax = kMax;
@@ -293,6 +295,7 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
   vector<FT> fX(d);
   dx[0] = enumf(1.0);
   k = 0;
+  int kMin = d;
   //~ cout << "starting enum" << endl;
   while (k >= 0) {
     //~ cout << k << ", " << maxDist << ", " << l[k] << ", " << rdiag[k];
@@ -304,6 +307,7 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
       if (k < d - 1) {
         // next level
         k++;
+        nodes.add_ui(nodes, 1);
         c = 0.0;
         for (int j = 0; j < k; j++) {
           c += mut[j][k]*alpha[j]*rdiag[j];
@@ -333,12 +337,16 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
     }
     // vector too large or solution found - backtrack
 		k--;
+    if (kMin > k) {
+      kMin = k;
+    }
+    
 		if (k >= 0) {
 			// next x[k]/alpha[k]
 			x[k] += dx[k];
 			alpha[k] += dx[k]/rdiag[k];
 			l[k] = alpha[k]*alpha[k]*rdiag[k];
-			if (k > 0) {
+			if (k > kMin) {
         l[k] += l[k-1];
         ddx[k] = (dx[k] < 0)? -1.0 : 1.0;
 				dx[k] = -1.0*(dx[k] + ddx[k]);

@@ -351,7 +351,9 @@ int dSvpReduce(IntMatrix& b, int start, int end) {
   BKZReduction<Float> bkzObj(mGSO, lllObj, param);
   bool clean = true;
   //~ cout << "dsvp call" << endl;
+  Enumeration::nodes = 0;
   bkzObj.dSvpReduction(start, param.blockSize, param, clean);
+  cout << Enumeration::nodes << endl;
   //~ bkzObj.dumpGSO("gso.log", "DSVP");
   //~ cout << "clean: " << clean << endl;
   return bkzObj.status;
@@ -377,6 +379,7 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual) {
             gso.getRMatrix(), EVALMODE_SV);
   evaluator->solCoord.clear();
   
+  Enumeration::nodes = 0;
   if (dual) {
     //~ cout << "enumerating dual" << endl;
     maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
@@ -388,6 +391,7 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual) {
     Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
             emptySubTree, 0, d, pruning);
   }
+  cout << Enumeration::nodes << ", ";
   
   if (!evaluator->solCoord.empty()) {
     for (int i = 0; i < d; i++) {

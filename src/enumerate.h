@@ -38,6 +38,9 @@ public:
   template<class FT>
   static void enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
                Evaluator<FT>& evaluator, int first, int last);
+  
+  static Z_NR<mpz_t> nodes;
+  
 private:
   static const int DMAX = 150;
   static enumf mut[DMAX][DMAX];

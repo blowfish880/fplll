@@ -308,7 +308,8 @@ bool BKZReduction<FT>::bkzLoop(const int loop, int& kappaMax, const BKZParam &pa
   if (par.flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "End of BKZ loop " << std::setw(4) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s, ";
+    prefix << std::setw(20) << Enumeration::nodes << ")";
     dumpGSO(par.dumpGSOFilename, prefix.str());
   }
 
@@ -341,7 +342,8 @@ bool BKZReduction<FT>::dbkzLoop(const int loop, int& kappaMax, const BKZParam &p
   if (par.flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "End of DBKZ loop " << std::setw(3) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s,";
+    prefix << std::setw(20) << Enumeration::nodes << ")";
     dumpGSO(par.dumpGSOFilename, prefix.str());
   }
 
@@ -462,6 +464,7 @@ bool BKZReduction<FT>::bkz() {
   cputimeStart = cputime();
   ppCputime = 0;
   svpCalls = 0;
+  Enumeration::nodes = 0;
 
   m.discoverAllRows();
 
