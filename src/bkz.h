@@ -31,7 +31,7 @@ public:
   blockSize(blockSize), delta(delta), flags(flags),
   maxLoops(maxLoops), maxTime(maxTime),
   autoAbort_scale(autoAbort_scale), autoAbort_maxNoDec(autoAbort_maxNoDec),
-  dumpGSOFilename("gso.log"), preprocessing(NULL) {
+  dumpGSOFilename("gso.log"), preprocessing(NULL), kan(NULL) {
     if (linearPruningLevel > 0) {
       enableLinearPruning(linearPruningLevel);
     }
@@ -77,6 +77,11 @@ public:
   */
   
   BKZParam *preprocessing;
+  
+  /** Kannan style preprocessing
+  */
+  
+  BKZParam *kan;
 
   inline void enableLinearPruning(int level) {
     int startDescent = blockSize - level;

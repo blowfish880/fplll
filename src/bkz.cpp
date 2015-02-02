@@ -108,6 +108,15 @@ bool BKZReduction<FT>::svpReduction(int kappa, int blockSize, const BKZParam &pa
     }
   }
 
+  const BKZParam *kan = par.kan;
+  if (kan && kan->blockSize < blockSize) {
+    int k = blockSize - kan->blockSize;
+    bool clean3 = true;
+    if (!bkzLoop(0, numRows, *kan, kappa + k, kappa + blockSize, clean3))
+        return false;
+    clean = clean3;
+  }
+
   maxDist = m.getRExp(kappa, kappa, maxDistExpo);
   deltaMaxDist.mul(delta, maxDist);
   vector<FT>& solCoord = evaluator.solCoord;
