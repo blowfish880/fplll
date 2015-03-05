@@ -310,11 +310,11 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
         nodes.add_ui(nodes, 1);
         c = 0.0;
         for (int j = 0; j < k; j++) {
-          c += mut[j][k]*alpha[j]*rdiag[j];
+          c += mut[j][k]*alpha[j];
         }
         x[k] = rint(c);
-        alpha[k] = (x[k] - c)/rdiag[k];
-        l[k] = alpha[k]*alpha[k]*rdiag[k];
+        alpha[k] = x[k] - c;
+        l[k] = alpha[k]*alpha[k]/rdiag[k];
         if (k > 0) {
           l[k] += l[k-1];
         }
@@ -344,8 +344,8 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
 		if (k >= 0) {
 			// next x[k]/alpha[k]
 			x[k] += dx[k];
-			alpha[k] += dx[k]/rdiag[k];
-			l[k] = alpha[k]*alpha[k]*rdiag[k];
+			alpha[k] += dx[k];
+			l[k] = alpha[k]*alpha[k]/rdiag[k];
 			if (k > kMin) {
         l[k] += l[k-1];
         ddx[k] = (dx[k] < 0)? -1.0 : 1.0;

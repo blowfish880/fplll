@@ -119,6 +119,7 @@ public:
   bool bkzLoop(const int loop, int& kappaMax, const BKZParam &param, int minRow, int maxRow, bool& clean);
   bool dbkzLoop(const int loop, int& kappaMax, const BKZParam &param, int minRow, int maxRow, bool& clean);
   bool sldLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean);
+  bool rnkLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean);
   bool localPP(const BKZParam &par, int kappa, int blockSize, bool& clean, bool dual);
   bool bkz();
   void dumpGSO(const std::string filename, const std::string prefix, bool append = true);
@@ -130,6 +131,10 @@ public:
 private:
   void printParams(const BKZParam &param, ostream &out);
   bool setStatus(int newStatus);
+  void updateSldPotential();
+  void getSubDet(double& subdet, int start, int end);
+  void setRollback();
+  void rollback();
 
   const BKZParam& param;
   int numRows;
@@ -145,6 +150,10 @@ private:
   double ppCputimeStart, ppCputime;
   
   long svpCalls;
+  double sldPotOld, sldPot;
+  
+  IntMatrix rb_point;
+  double subDetOld, subDet;
 };
 
 template<class FT>

@@ -251,6 +251,11 @@ int bkzReductionF(IntMatrix &b, const BKZParam& param, int selFT, double lllDelt
   LLLReduction<Integer, FT> lllObj(mGSO, lllDelta, LLL_DEF_ETA, LLL_DEFAULT);
   BKZReduction<FT> bkzObj(mGSO, lllObj, param);
   bkzObj.bkz();
+  
+  if (param.red_method == RED_RNK) {
+    b = IntMatrix(mGSO.b);
+  }
+  
   return bkzObj.status;
 }
 

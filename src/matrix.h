@@ -128,6 +128,12 @@ public:
   Matrix(int rows, int cols) : r(0), c(0) {
     resize(rows, cols);
   }
+  /** Copy Constructor */
+  Matrix(Matrix<T>& m) : r(0), c(0) {
+    resize(m.getRows(), m.getCols());
+    
+    matrix = vector<NumVect<T> >(m.matrix);
+  }
 
   /** Sets number of rows and the number of columns to 0. */
   void clear() {
@@ -287,6 +293,8 @@ public:
   /** Creates a matrix of dimensions rows x cols. All elements are
       initialized with the default constructor of Z_NR&lt;T&gt;. */
   ZZ_mat(int rows, int cols) : Matrix<T>(rows, cols) {}
+  /** copy constructor */
+  ZZ_mat(Matrix<T> m) : Matrix<T>(m) {}
 
   // generators
   void gen_zero(int d, int n) {

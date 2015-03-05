@@ -218,7 +218,8 @@ enum REDMethod {
   RED_BKZ = 0,
   RED_SLD = 1,
   RED_DUAL = 3,
-  RED_DBKZ = 4
+  RED_DBKZ = 4,
+  RED_RNK = 5
 };
 
 FPLLL_END_NAMESPACE
