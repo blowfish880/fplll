@@ -37,7 +37,7 @@ public:
 
   template<class FT>
   static void enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
-               Evaluator<FT>& evaluator, int first, int last);
+               Evaluator<FT>& evaluator, int first, int last, const vector<double>& pruning);
   
   static Z_NR<mpz_t> nodes;
   

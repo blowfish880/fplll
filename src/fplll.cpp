@@ -365,7 +365,7 @@ int dSvpReduce(IntMatrix& b, int start, int end) {
 }
 
 // testing
-int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual) {
+int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune) {
     // d = lattice dimension (note that it might decrease during preprocessing)
   int d = b.getRows();
 
@@ -385,12 +385,18 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual) {
   evaluator->solCoord.clear();
   
   Enumeration::nodes = 0;
+  vector<double> pruning;
+  if (prune) {
+    BKZParam tmp;
+    tmp.blockSize = d;
+    tmp.enableLinearPruning(d);
+    pruning = tmp.pruning;
+  }
   if (dual) {
     //~ cout << "enumerating dual" << endl;
     maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
-    Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d);
+    Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d, pruning);
   } else {
-    vector<double> pruning;
     const vector<Float> emptySubTree;
     maxDist = gso.getRExp(0, 0, maxDistExpo);
     Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
@@ -415,7 +421,7 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual) {
 int dSVPReduction(IntMatrix& b) {
   IntVect x;
   double start = cputime();
-  svpEnum(b, x, true);
+  svpEnum(b, x, true, false);
   cout << "t_enum: " << (cputime() - start)* 0.001 << endl;
   start = cputime();
   

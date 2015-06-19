@@ -243,7 +243,7 @@ void Enumeration::enumerateDouble(MatGSO<Z_NR<double>, FP_NR<double> >& gso,
 
 template<class FT>
 void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
-               Evaluator<FT>& evaluator, int first, int last) {
+               Evaluator<FT>& evaluator, int first, int last, const vector<double>& pruning) {
   enumf maxDist;
   FT fR, fMu, fMaxDistNorm;
   long rExpo, normExp = LONG_MIN;
@@ -284,6 +284,12 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
     l[i] = enumf(0.0);
     alpha[i] = enumf(0.0);
     x[i] = enumf(0.0);
+    
+    if (pruning.empty()) {
+      maxDists[d-i-1] = maxDist;
+    } else {
+      maxDists[d-i-1] = pruning[i] * maxDist;
+    }
   }
   
   //~ cout << "alpha: " << endl;
@@ -297,13 +303,14 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
   k = 0;
   int kMin = d;
   //~ cout << "starting enum" << endl;
+  
   while (k >= 0) {
     //~ cout << k << ", " << maxDist << ", " << l[k] << ", " << rdiag[k];
     //~ for (int i = 0; i <= k; i++) {
       //~ cout  << ", " << x[i];
     //~ }
     //~ cout << endl;
-    if (l[k] < maxDist) {
+    if (l[k] < maxDists[k]) {
       if (k < d - 1) {
         // next level
         k++;
@@ -332,6 +339,14 @@ void Enumeration::enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long max
         }
         if (!Xzero) {
           evaluator.evalSol(fX, l[k], maxDist, normExp);
+          
+          for (int i = 0; i < d; i++) {
+            if (pruning.empty()) {
+              maxDists[d-i-1] = maxDist;
+            } else {
+              maxDists[d-i-1] = pruning[i] * maxDist;
+            }
+          }
         }
       }
     }

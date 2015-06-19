@@ -59,7 +59,7 @@ int hkzReduction(IntMatrix& b, int flags = HKZ_DEFAULT);
 
 // testing
 
-int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual);
+int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune);
 int dSVPReduction(IntMatrix& b);
 int dSvpReduce(IntMatrix& b, int start, int end);
 

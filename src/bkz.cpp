@@ -110,7 +110,7 @@ void BKZReduction<FT>::updateSldPotential() {
     f = m.getRExp(i, i, expo);
     logF.log(f, GMP_RNDU);
     
-    sldPot += (p-1-(i/param.blockSize))*(logF.get_d() + expo * log(2.0));
+    sldPot += (p-(i/param.blockSize))*(logF.get_d() + expo * log(2.0));
   }
 }
 
@@ -140,7 +140,7 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   vector<FT>& x = evaluator.solCoord;
   x.clear();
   //~ cout << "enum call" << endl;
-  Enumeration::enumerateDual(m, maxDist, maxDistExpo, evaluator, kappa, kappa + blockSize);
+  Enumeration::enumerateDual(m, maxDist, maxDistExpo, evaluator, kappa, kappa + blockSize, par.pruning);
   
   if (maxDist <= deltaMaxDist) {
     // basis already delta-dSVP reduced
