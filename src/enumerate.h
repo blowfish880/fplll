@@ -33,7 +33,7 @@ public:
   static void enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
                Evaluator<FT>& evaluator, const vector<FT>& targetCoord,
                const vector<FT>& subTree, int first, int last,
-               const vector<double>& pruning);
+               const vector<double>& pruning, bool dual = false);
 
   template<class FT>
   static void enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
@@ -51,6 +51,7 @@ private:
   static int k;              // Current level in the enumeration
   static int kEnd;           // The algorithm stops when k = kEnd
   static int kMax;           // Index of the last non-zero value of x (<= kEnd)
+  static bool dual;
 
   // Input: x, dx, ddx, k, kMax, kEnd
   // Output: k, kMax
@@ -73,6 +74,14 @@ private:
       result = false;
     }
     return result;
+  }
+
+  static inline enumf center_summand(int k, int j) {
+    return dual ? alpha[j] * mut[d-j-1][d-k-1] : - x[j] * mut[k][j];
+  }
+  
+  static inline enumf part_dist(int k) {
+    return dual ? (alpha[k] * alpha[k])/rdiag[k] : alpha[k] * alpha[k] * rdiag[k];
   }
 
   template<class FT>

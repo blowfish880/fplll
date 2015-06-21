@@ -392,16 +392,16 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune) {
     tmp.enableLinearPruning(d);
     pruning = tmp.pruning;
   }
-  if (dual) {
+  //~ if (dual) {
     //~ cout << "enumerating dual" << endl;
-    maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
-    Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d, pruning);
-  } else {
+    //~ maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
+    //~ Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d, pruning);
+  //~ } else {
     const vector<Float> emptySubTree;
     maxDist = gso.getRExp(0, 0, maxDistExpo);
     Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
-            emptySubTree, 0, d, pruning);
-  }
+            emptySubTree, 0, d, pruning, dual);
+  //~ }
   cout << Enumeration::nodes << ", ";
   
   if (!evaluator->solCoord.empty()) {
