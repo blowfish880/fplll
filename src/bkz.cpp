@@ -148,7 +148,7 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
     return true;
   }
   
-  //~ cout << "non trivial solution found. inserting: " << x << endl;
+  cout << "non trivial solution found. inserting: " << x << endl;
   // we don't have to worry about the vector already being part of the basis
   // the gcd procedure will take care of it automatically and very efficiently
   int d = blockSize;

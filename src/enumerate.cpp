@@ -71,6 +71,9 @@ void Enumeration::prepareEnumeration(enumf maxDist, const vector<FT>& subTree, b
       /*FPLLL_TRACE("k=" << k << " x_k=" << newX << " center_k=" << center[k]
               << " dist_k=" << dist[k] << " dx_k=" << dx[k]
               << " ddx_k=" << ddx[k]);*/
+      //~ cout << "k=" << k << " x_k=" << newX << " center_k=" << center[k]
+              //~ << " dist_k=" << dist[k] << " dx_k=" << dx[k]
+              //~ << " ddx_k=" << ddx[k] << endl;
     }
     x[k] = newX;
     alpha[k] = newX - newCenter;
@@ -104,6 +107,9 @@ bool Enumeration::enumerateLoop(enumf& newMaxDist, int& newKMax) {
     /*FPLLL_TRACE("k=" << k << " x_k=" << x[k] << " center_k=" << center[k]
             << " dist_k=" << dist[k] << " r_k=" << rdiag[k]
             << " y=" << y << " newDist=" << newDist);*/
+    //~ cout << "k=" << k << " x_k=" << x[k] << " center_k=" << center[k]
+            //~ << " dist_k=" << dist[k] << " r_k=" << rdiag[k]
+            //~ << " alpha_k=" << alpha[k] << " newDist=" << newDist << endl;
     if (newDist <= maxDists[k]) {
       k--;
       nodes.add_ui(nodes, 1);
@@ -197,6 +203,7 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
   fMaxDistNorm.mul_2si(fMaxDist, maxDistExpo - normExp);
   maxDist = fMaxDistNorm.get_d(GMP_RNDU);
   if (dual) maxDist = enumf(1.0)/maxDist;
+  //~ cout << "maxDist=" << maxDist << endl;
 
   for (int i = 0; i < d; i++) {
     fR = gso.getRExp(i + first, i + first, rExpo);

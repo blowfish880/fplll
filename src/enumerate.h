@@ -81,7 +81,7 @@ private:
   }
   
   static inline enumf part_dist(int k) {
-    return dual ? (alpha[k] * alpha[k])/rdiag[k] : alpha[k] * alpha[k] * rdiag[k];
+    return dual ? (alpha[k] * alpha[k])/rdiag[d-k-1] : alpha[k] * alpha[k] * rdiag[k];
   }
 
   template<class FT>

@@ -398,7 +398,8 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune) {
     //~ Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d, pruning);
   //~ } else {
     const vector<Float> emptySubTree;
-    maxDist = gso.getRExp(0, 0, maxDistExpo);
+    int m_i = dual ? d-1 : 0;
+    maxDist = gso.getRExp(m_i, m_i, maxDistExpo);
     Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
             emptySubTree, 0, d, pruning, dual);
   //~ }
@@ -422,6 +423,7 @@ int dSVPReduction(IntMatrix& b) {
   IntVect x;
   double start = cputime();
   svpEnum(b, x, true, false);
+  cout << x << endl;
   cout << "t_enum: " << (cputime() - start)* 0.001 << endl;
   start = cputime();
   
