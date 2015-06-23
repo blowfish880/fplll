@@ -338,7 +338,7 @@ const char* getRedStatusStr(int status) {
     return "unknown error";
 }
 
-
+// testing
 int dSvpReduce(IntMatrix& b, int start, int end) {
   int gsoFlags = 0;
   if (b.getRows() == 0 || b.getCols() == 0)
@@ -364,7 +364,6 @@ int dSvpReduce(IntMatrix& b, int start, int end) {
   return bkzObj.status;
 }
 
-// testing
 int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune) {
     // d = lattice dimension (note that it might decrease during preprocessing)
   int d = b.getRows();
@@ -392,17 +391,13 @@ int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune) {
     tmp.enableLinearPruning(d);
     pruning = tmp.pruning;
   }
-  //~ if (dual) {
-    //~ cout << "enumerating dual" << endl;
-    //~ maxDist = gso.getRExp(d-1, d-1, maxDistExpo);
-    //~ Enumeration::enumerateDual(gso, maxDist, maxDistExpo, *evaluator, 0, d, pruning);
-  //~ } else {
-    const vector<Float> emptySubTree;
-    int m_i = dual ? d-1 : 0;
-    maxDist = gso.getRExp(m_i, m_i, maxDistExpo);
-    Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
-            emptySubTree, 0, d, pruning, dual);
-  //~ }
+  
+  const vector<Float> emptySubTree;
+  int m_i = dual ? d-1 : 0;
+  maxDist = gso.getRExp(m_i, m_i, maxDistExpo);
+  Enumeration::enumerate(gso, maxDist, maxDistExpo, *evaluator, emptySubTree,
+          emptySubTree, 0, d, pruning, dual);
+  
   cout << Enumeration::nodes << ", ";
   
   if (!evaluator->solCoord.empty()) {

@@ -140,7 +140,9 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   vector<FT>& x = evaluator.solCoord;
   x.clear();
   //~ cout << "enum call" << endl;
-  Enumeration::enumerateDual(m, maxDist, maxDistExpo, evaluator, kappa, kappa + blockSize, par.pruning);
+  //~ Enumeration::enumerateDual(m, maxDist, maxDistExpo, evaluator, kappa, kappa + blockSize, par.pruning);
+  Enumeration::enumerate(m, maxDist, maxDistExpo, evaluator, emptySubTree,
+            emptySubTree, kappa, kappa + blockSize, par.pruning, true);
   
   if (maxDist <= deltaMaxDist) {
     // basis already delta-dSVP reduced
@@ -148,7 +150,7 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
     return true;
   }
   
-  cout << "non trivial solution found. inserting: " << x << endl;
+  //~ cout << "non trivial solution found. inserting: " << x << endl;
   // we don't have to worry about the vector already being part of the basis
   // the gcd procedure will take care of it automatically and very efficiently
   int d = blockSize;
