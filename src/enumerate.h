@@ -77,11 +77,7 @@ private:
   }
 
   static inline enumf center_summand(int k, int j) {
-    return dual ? alpha[j] * mut[d-j-1][d-k-1] : - x[j] * mut[k][j];
-  }
-  
-  static inline enumf part_dist(int k) {
-    return dual ? (alpha[k] * alpha[k])/rdiag[d-k-1] : alpha[k] * alpha[k] * rdiag[k];
+    return dual ? alpha[j] * mut[d-k-1][d-j-1] : - x[j] * mut[k][j];
   }
 
   template<class FT>

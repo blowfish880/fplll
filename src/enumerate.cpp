@@ -103,7 +103,7 @@ bool Enumeration::enumerateLoop(enumf& newMaxDist, int& newKMax) {
 
   while (true) {
     alpha[k] = x[k] - center[k];
-    enumf newDist = dist[k] + part_dist(k);
+    enumf newDist = dist[k] + alpha[k] * alpha[k] * rdiag[k];
     /*FPLLL_TRACE("k=" << k << " x_k=" << x[k] << " center_k=" << center[k]
             << " dist_k=" << dist[k] << " r_k=" << rdiag[k]
             << " y=" << y << " newDist=" << newDist);*/
@@ -208,7 +208,11 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
   for (int i = 0; i < d; i++) {
     fR = gso.getRExp(i + first, i + first, rExpo);
     fR.mul_2si(fR, rExpo - normExp);
-    rdiag[i] = fR.get_d();
+    if (dual) {
+      rdiag[d-i-1] = enumf(1.0)/fR.get_d();
+    } else {
+      rdiag[i] = fR.get_d();
+    }
 
     if (solvingSVP)
       centerPartSum[i] = 0.0;
@@ -217,7 +221,11 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
 
     for (int j = i + 1; j < d; j++) {
       gso.getMu(fMu, j + first, i + first);
-      mut[i][j] = fMu.get_d();
+      if (dual) {
+        mut[j][i] = fMu.get_d();
+      } else {
+        mut[i][j] = fMu.get_d();
+      }
     }
   }
 
