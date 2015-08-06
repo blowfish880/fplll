@@ -117,9 +117,9 @@ void BKZReduction<FT>::updateSldPotential() {
 template<class FT>
 bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &par, bool& clean) {
   long maxDistExpo;
-  int lllStart = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
+  int lllEnd = (par.flags & BKZ_BOUNDED_LLL) ? kappa + blockSize : m.d;
   //~ cout << "LLL call from " << kappa << " to " << kappa + blockSize << endl;
-  if (!lllObj.lll(lllStart, kappa, kappa + blockSize)) {
+  if (!lllObj.lll(kappa, kappa, lllEnd)) {
     return setStatus(lllObj.status);
   }
   if (lllObj.nSwaps > 0) {
@@ -194,31 +194,9 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   //~ cout << "insertion loop done" << endl;
   m.rowOpEnd(kappa, kappa + blockSize);
   clean = false;
-  //~ m.updateGSO();
-  //~ cout << "size reduction:" << endl;
-  //~ if (!lllObj.sizeReduction(kappa, kappa + blockSize))
-      //~ return setStatus(lllObj.status);
-  
-  // sanity check
-  //~ maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
-  //~ if (maxDist < deltaMaxDist) {
-    //~ cerr << "maxDist: " << maxDist << ", ";
-    //~ cerr << "deltaDaxDist: " << deltaMaxDist << ", ";
-    //~ cerr << "maxDistExpo: " << maxDistExpo << endl;
-    //~ cerr << "kappa: " << kappa << endl;
-    //~ FPLLL_ABORT("Inserted long vector into dual!");
-  //~ }
-  if (!lllObj.lll(0, kappa, kappa + blockSize)) {
+  if (!lllObj.lll(kappa, kappa, kappa + blockSize)) {
     return setStatus(lllObj.status);
   }
-  //~ cout << kappa << "; ";
-  //~ cout << "maxDist : " << maxDist << "; ";
-  //~ cout << "maxDistExpo old : " << maxDistExpo << "; ";
-  //~ maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
-  //~ cout << "last R : " << maxDist << "; ";
-  //~ cout << "maxDistExpo : " << maxDistExpo << "; ";
-  //~ cout << "deltaMaxDist : " << deltaMaxDist << endl;
-  //~ dumpGSO(par.dumpGSOFilename, "DSVP");
   return true;
 }
 
