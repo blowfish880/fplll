@@ -117,9 +117,10 @@ void BKZReduction<FT>::updateSldPotential() {
 template<class FT>
 bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &par, bool& clean) {
   long maxDistExpo;
-  int lllEnd = (par.flags & BKZ_BOUNDED_LLL) ? kappa + blockSize : m.d;
+  int lllStart = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
+  
   //~ cout << "LLL call from " << kappa << " to " << kappa + blockSize << endl;
-  if (!lllObj.lll(kappa, kappa, lllEnd)) {
+  if (!lllObj.lll(lllStart, kappa, kappa + blockSize)) {
     return setStatus(lllObj.status);
   }
   if (lllObj.nSwaps > 0) {
@@ -362,6 +363,7 @@ bool BKZReduction<FT>::dbkzLoop(const int loop, int& kappaMax, const BKZParam &p
     cerr << ", slope = " << std::setw( 9 ) << std::setprecision( 6 ) << getCurrentSlope(m, minRow, maxRow) << endl;
   }
   if (par.flags & BKZ_DUMP_GSO) {
+    lllObj.sizeReduction();
     std::ostringstream prefix;
     prefix << "End of DBKZ loop " << std::setw(3) << loop;
     prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s,";
