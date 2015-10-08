@@ -265,6 +265,8 @@ int bkzReduction(IntMatrix* B, IntMatrix *U, const BKZParam& param, FloatType fl
   IntMatrix& uInv = emptyMat;
   FPLLL_CHECK(B, "B == NULL in bkzReduction");
 
+  FPLLL_CHECK((!U || param.red_method == RED_BKZ), "Transformation matrix not supported for anything involving dual SVP reduction.")
+
   if (U && u.empty()) {
     u.gen_identity(B->getRows());
   }

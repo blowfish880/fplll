@@ -119,15 +119,12 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   long maxDistExpo;
   int lllStart = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
   
-  //~ cout << "LLL call from " << kappa << " to " << kappa + blockSize << endl;
   if (!lllObj.lll(lllStart, kappa, kappa + blockSize)) {
     return setStatus(lllObj.status);
   }
   if (lllObj.nSwaps > 0) {
     clean = false;
   }
-  
-  //~ cout << "LLL done. preparing enum" << endl;
   
   if (!localPP(par, kappa, blockSize, clean, true)) {
     return false;
@@ -136,22 +133,16 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
   m.updateGSO();
   maxDist = m.getRExp(kappa + blockSize - 1, kappa + blockSize - 1, maxDistExpo);
   deltaMaxDist.div(maxDist, delta);
-  //~ cout << "maxDist " <<  maxDist << endl;
-  //~ cout << "deltaMaxDist " <<  deltaMaxDist << endl;
   vector<FT>& x = evaluator.solCoord;
   x.clear();
-  //~ cout << "enum call" << endl;
-  //~ Enumeration::enumerateDual(m, maxDist, maxDistExpo, evaluator, kappa, kappa + blockSize, par.pruning);
   Enumeration::enumerate(m, maxDist, maxDistExpo, evaluator, emptySubTree,
             emptySubTree, kappa, kappa + blockSize, par.pruning, true);
   
   if (maxDist <= deltaMaxDist) {
     // basis already delta-dSVP reduced
-    //~ cout << maxDist << " <= " << deltaMaxDist << endl;
     return true;
   }
   
-  //~ cout << "non trivial solution found. inserting: " << x << endl;
   // we don't have to worry about the vector already being part of the basis
   // the gcd procedure will take care of it automatically and very efficiently
   int d = blockSize;
@@ -165,7 +156,7 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
       }
     }
   }
-  //~ cout << "enum done. inserting..." << endl;
+  
   // tree based gcd computation on x, performing operations also on b
   int off = 1;
   int k;
@@ -192,7 +183,7 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
     }
 		off *= 2;
   }
-  //~ cout << "insertion loop done" << endl;
+  
   m.rowOpEnd(kappa, kappa + blockSize);
   clean = false;
   if (!lllObj.lll(kappa, kappa, kappa + blockSize)) {
@@ -331,8 +322,7 @@ bool BKZReduction<FT>::bkzLoop(const int loop, int& kappaMax, const BKZParam &pa
   if (par.flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "End of BKZ loop " << std::setw(4) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s, ";
-    prefix << std::setw(20) << Enumeration::nodes << ")";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
     dumpGSO(par.dumpGSOFilename, prefix.str());
   }
 
@@ -366,8 +356,7 @@ bool BKZReduction<FT>::dbkzLoop(const int loop, int& kappaMax, const BKZParam &p
     lllObj.sizeReduction();
     std::ostringstream prefix;
     prefix << "End of DBKZ loop " << std::setw(3) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s,";
-    prefix << std::setw(20) << Enumeration::nodes << ")";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
     dumpGSO(par.dumpGSOFilename, prefix.str());
   }
 

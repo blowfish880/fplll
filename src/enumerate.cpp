@@ -229,7 +229,7 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
   fMaxDistNorm = dual ? enumf(1.0)/maxDist : maxDist; // Exact
   fMaxDist.mul_2si(fMaxDistNorm, normExp - maxDistExpo);
   
-  if (dual) reverseBySwap(evaluator.solCoord, 0, d-1);
+  if (dual && !evaluator.solCoord.empty()) reverseBySwap(evaluator.solCoord, 0, d-1);
 }
 
 
