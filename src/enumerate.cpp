@@ -197,7 +197,6 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
   fMaxDistNorm.mul_2si(fMaxDist, maxDistExpo - normExp);
   maxDist = fMaxDistNorm.get_d(GMP_RNDU);
   if (dual) maxDist = enumf(1.0)/maxDist;
-  //~ cout << "maxDist=" << maxDist << endl;
 
   for (int i = 0; i < d; i++) {
     fR = gso.getRExp(i + first, i + first, rExpo);

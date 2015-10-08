@@ -217,9 +217,8 @@ enum HKZFlags {
 enum REDMethod {
   RED_BKZ = 0,
   RED_SLD = 1,
-  RED_DUAL = 3,
-  RED_DBKZ = 4,
-  RED_RNK = 5
+  RED_DUAL = 2,
+  RED_DBKZ = 3
 };
 
 FPLLL_END_NAMESPACE

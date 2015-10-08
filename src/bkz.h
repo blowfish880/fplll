@@ -132,9 +132,6 @@ private:
   void printParams(const BKZParam &param, ostream &out);
   bool setStatus(int newStatus);
   void updateSldPotential();
-  void getSubDet(double& subdet, int start, int end);
-  void setRollback();
-  void rollback();
 
   const BKZParam& param;
   int numRows;
@@ -147,13 +144,8 @@ private:
   const vector<FT> emptyTarget, emptySubTree;
   FT maxDist, deltaMaxDist;
   double cputimeStart;
-  double ppCputimeStart, ppCputime;
   
-  long svpCalls;
   double sldPotOld, sldPot;
-  
-  IntMatrix rb_point;
-  double subDetOld, subDet;
 };
 
 template<class FT>

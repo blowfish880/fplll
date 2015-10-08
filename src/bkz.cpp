@@ -73,33 +73,6 @@ static double getCurrentSlope(MatGSO<Integer, FT>& m, int startRow, int stopRow)
 }
 
 template<class FT>
-void BKZReduction<FT>::getSubDet(double& subdet, int start, int end) {
-  subdet = 0.0;
-  FT f, logF;
-  long expo;
-  for(int i=start; i<end; i++) {
-    m.updateGSORow(i);
-    f = m.getRExp(i, i, expo);
-    logF.log(f, GMP_RNDU);
-    
-    subdet += logF.get_d() + expo * log(2.0);
-  }
-}
-
-template<class FT>
-void BKZReduction<FT>::setRollback() {
-  rb_point = IntMatrix(m.b);
-}
-
-template<class FT>
-void BKZReduction<FT>::rollback() {
-  m.rowOpBegin(0, numRows);
-  m.b = rb_point;
-  m.rowOpEnd(0, numRows);
-  m.updateGSO();
-}
-
-template<class FT>
 void BKZReduction<FT>::updateSldPotential() {
   sldPot = 0.0;
   int p = numRows/param.blockSize;
@@ -194,7 +167,6 @@ bool BKZReduction<FT>::dSvpReduction(int kappa, int blockSize, const BKZParam &p
 
 template<class FT>
 bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bool& clean, bool dual) {
-  ppCputimeStart = cputime();
   const BKZParam *preproc = par.preprocessing;
   if (preproc && preproc->blockSize < blockSize && preproc->blockSize > 2) {
     int dummyKappaMax = numRows;
@@ -221,7 +193,6 @@ bool BKZReduction<FT>::localPP(const BKZParam &par, int kappa, int blockSize, bo
         clean = clean2;
     }
   }
-  ppCputime += (cputime() - ppCputimeStart);
   
   return true;
 }
@@ -364,93 +335,8 @@ bool BKZReduction<FT>::dbkzLoop(const int loop, int& kappaMax, const BKZParam &p
 }
 
 template<class FT>
-bool BKZReduction<FT>::rnkLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean) {
-  //~ double subDetLp;
-  int dummyKappaMax = numRows;
-  FT logDelta; logDelta.log(delta, GMP_RNDU);
-  bool clean2;
-  int lp;
-  
-  for (int kappa = minRow; kappa < maxRow - par.blockSize - 1; kappa += par.blockSize) {
-    setRollback();
-    getSubDet(subDetOld, kappa, kappa + par.blockSize);
-    //~ subDet = subDetOld;
-    lp = 0;
-    //~ do {
-      //~ subDetLp = subDet;
-      //~ 
-      //~ if (!dbkzLoop(lp, dummyKappaMax, par, kappa, min(kappa + 2*par.blockSize, maxRow), clean2))
-        //~ return false;
-      //~ 
-      //~ if (!bkzLoop(lp, dummyKappaMax, par, kappa, min(kappa + 2*par.blockSize, maxRow), clean2))
-        //~ return false;
-      //~ 
-      //~ getSubDet(subDet, kappa, kappa + par.blockSize);
-      //~ 
-      //~ if (subDet <= subDetOld + logDelta.get_d() && subDet < subDetLp) {
-        //~ setRollback();
-        //~ clean = false;
-      //~ }
-      //~ lp++;
-    //~ } while (subDet < subDetLp);
-    
-    int cnt = -1;
-    double oldSlope, newSlope;
-    while (cnt < 5) {
-      if (!dbkzLoop(lp, dummyKappaMax, par, kappa, min(kappa + 2*par.blockSize, maxRow), clean2))
-        return false;
-      
-      if (!bkzLoop(lp, dummyKappaMax, par, kappa, min(kappa + 2*par.blockSize, maxRow), clean2))
-        return false;
-        
-      newSlope = -getCurrentSlope(m, kappa, min(kappa + 2*par.blockSize, maxRow));
-      if (cnt < 0 || newSlope < oldSlope) {
-        cnt = 0;
-      } else {
-        cnt++;
-      }
-      oldSlope = min(oldSlope, newSlope);
-      lp++;
-    }
-    
-    getSubDet(subDet, kappa, kappa + par.blockSize);
-    if (subDet > subDetOld + logDelta.get_d()) {
-      rollback();
-    } else {
-      clean = false;
-    }
-  }
-  
-  if (par.flags & BKZ_VERBOSE) {
-    FT r0;
-    Float fr0;
-    long expo;
-    r0 = m.getRExp(minRow, minRow, expo);
-    fr0 = r0.get_d();
-    fr0.mul_2si(fr0, expo);
-    cerr << "End of RNK loop " << std::setw(4) << loop << ", time = " << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s";
-    cerr << ", r_" << minRow << " = " << fr0;
-    cerr << ", slope = " << std::setw( 9 ) << std::setprecision( 6 ) << getCurrentSlope(m, minRow, maxRow) << endl;
-  }
-  
-  if (par.flags & BKZ_DUMP_GSO) {
-    std::ostringstream prefix;
-    prefix << "End of RNK loop " << std::setw(4) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s, ";
-    prefix << std::setw(20) << Enumeration::nodes << ")";
-    dumpGSO(par.dumpGSOFilename, prefix.str());
-  }
-  
-  return true;
-}
-
-template<class FT>
 bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, int maxRow, bool& clean) {
   bool clean_inner;
-  //~ std::ostringstream preLLL, preSVP, preDSVP;
-  //~ preLLL << "LLL ";
-  //~ preSVP << "SVP ";
-  //~ preDSVP << "DSVP ";
   
   do {
     clean_inner = true;
@@ -459,36 +345,26 @@ bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, 
       return setStatus(lllObj.status);
     }
     if (lllObj.nSwaps > 0) {
-      //~ cout << "LLL changed basis" << endl;
       clean_inner = false;
     }
-    
-    //~ dumpGSO(par.dumpGSOFilename, preLLL.str());
     
     for (int kappa = minRow; kappa < maxRow - 1; kappa += par.blockSize) {
       int blockSize = min(par.blockSize, maxRow - kappa);
       if (!svpReduction(kappa, blockSize, par, clean_inner)) {
-        //~ cout << "SVP failed for block " << kappa << ":" << (kappa + blockSize) << endl;
         return false;
       }
-      svpCalls++;
       m.updateGSO();
     }
     
-    //~ dumpGSO(par.dumpGSOFilename, preSVP.str());
-    
     if (!clean_inner) {
-      //~ cout << "SVP changed basis" << endl;
       clean = false;
     }
   } while (!clean_inner);
   
   for (int kappa = minRow + 1; kappa < maxRow - par.blockSize; kappa += par.blockSize) {
     if (!dSvpReduction(kappa, par.blockSize, par, clean)) return false;
-    svpCalls++;
     m.updateGSO();
   }
-  //~ dumpGSO(par.dumpGSOFilename, preDSVP.str());
   
   updateSldPotential();
   clean = (clean || (sldPot >= sldPotOld));
@@ -509,8 +385,7 @@ bool BKZReduction<FT>::sldLoop(const int loop, const BKZParam &par, int minRow, 
   if (par.flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "End of SLD loop " << std::setw(4) << loop;
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s, ";
-    prefix << std::setw(9) << svpCalls << ")";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart) * 0.001 << "s)";
     dumpGSO(par.dumpGSOFilename, prefix.str());
   }
   
@@ -522,8 +397,7 @@ bool BKZReduction<FT>::bkz() {
   if (param.red_method != RED_BKZ &&
       param.red_method != RED_SLD &&
       param.red_method != RED_DUAL &&
-      param.red_method != RED_DBKZ &&
-      param.red_method != RED_RNK) {
+      param.red_method != RED_DBKZ) {
     FPLLL_ABORT("Unsupported reduction method!");
   }
   
@@ -556,9 +430,7 @@ bool BKZReduction<FT>::bkz() {
       cerr << "Entering DUAL:" << endl;
     } else if (param.red_method == RED_BKZ){
       cerr << "Entering BKZ:" << endl;
-    } else if (param.red_method == RED_RNK){
-      cerr << "Entering RNK:" << endl;
-    }
+    } 
     printParams(param, cerr);
     cerr << endl;
   }
@@ -569,10 +441,6 @@ bool BKZReduction<FT>::bkz() {
   }
   
   cputimeStart = cputime();
-  ppCputime = 0;
-  svpCalls = 0;
-  Enumeration::nodes = 0;
-
   m.discoverAllRows();
 
   for (iLoop = 0;; iLoop++) {
@@ -588,8 +456,6 @@ bool BKZReduction<FT>::bkz() {
     bool clean = true;
     if (param.red_method == RED_SLD) {
       if (!sldLoop(iLoop, param, 0, numRows, clean)) return false;
-    } else if (param.red_method == RED_RNK) {
-      if (!rnkLoop(iLoop, param, 0, numRows, clean)) return false;
     } else {
       if (param.red_method == RED_DBKZ || param.red_method == RED_DUAL) {
         if (!dbkzLoop(iLoop, kappaMax, param, 0, numRows, clean)) return false;
@@ -604,8 +470,7 @@ bool BKZReduction<FT>::bkz() {
   if (flags & BKZ_DUMP_GSO) {
     std::ostringstream prefix;
     prefix << "Output ";
-    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart)* 0.001 << "s, ";
-    prefix << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (ppCputime * 0.001) << "s)";
+    prefix << " (" << std::fixed << std::setw( 9 ) << std::setprecision( 3 ) << (cputime() - cputimeStart)* 0.001 << "s)";
     
     dumpGSO(param.dumpGSOFilename, prefix.str());
   }
@@ -663,16 +528,6 @@ void BKZReduction<FT>::dumpGSO(const std::string filename, const std::string pre
     logF.log(f, GMP_RNDU);
     
     if (isnan(logF.get_d())) {
-      cerr << m.getMuMatrix() << endl;
-      cerr << endl;
-      cerr << m.getRMatrix() << endl;
-      
-      cout << i << ": " << f << endl;
-      cout << m.updateGSO() << endl;
-      cout << i << ": " << f << endl;
-      
-      dump << std::endl;
-      dump.close();
       FPLLL_ABORT("NaN detected!");
     }
     

@@ -57,14 +57,6 @@ int bkzReduction(IntMatrix& b, IntMatrix& u, int blockSize, int flags = BKZ_DEFA
 
 int hkzReduction(IntMatrix& b, int flags = HKZ_DEFAULT);
 
-// testing
-
-int svpEnum(IntMatrix& b, IntVect& solCoord, bool dual, bool prune);
-int dSVPReduction(IntMatrix& b);
-int dSvpReduce(IntMatrix& b, int start, int end);
-
-// 
-
 /**
  * Returns the string corresponding to an error code of LLL/BKZ.
  */
