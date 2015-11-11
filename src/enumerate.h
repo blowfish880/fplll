@@ -34,10 +34,6 @@ public:
                Evaluator<FT>& evaluator, const vector<FT>& targetCoord,
                const vector<FT>& subTree, int first, int last,
                const vector<double>& pruning, bool dual = false);
-
-  template<class FT>
-  static void enumerateDual(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
-               Evaluator<FT>& evaluator, int first, int last, const vector<double>& pruning);
   
   static Z_NR<mpz_t> nodes;
   
