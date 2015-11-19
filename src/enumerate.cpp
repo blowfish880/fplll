@@ -20,7 +20,6 @@ FPLLL_BEGIN_NAMESPACE
 
 enumf Enumeration::mut[DMAX][DMAX];
 enumf Enumeration::centerPartSums[DMAX][DMAX + 1];
-enumf Enumeration::c;
 EnumfVect Enumeration::rdiag;
 EnumfVect Enumeration::x;
 EnumfVect Enumeration::dx;
@@ -31,7 +30,6 @@ EnumfVect Enumeration::centerPartSum;
 EnumfVect Enumeration::maxDists;
 EnumfVect Enumeration::centerLoopBg;
 EnumfVect Enumeration::alpha;
-EnumfVect Enumeration::l;
 int Enumeration::d;
 int Enumeration::k;
 int Enumeration::kEnd;
