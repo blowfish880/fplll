@@ -35,6 +35,7 @@ int Enumeration::k;
 int Enumeration::kEnd;
 int Enumeration::kMax;
 bool Enumeration::dual;
+int Enumeration::babaiFrom;
 EnumfVect *Enumeration::co;
 
 static const vector<FP_NR<double> > EMPTY_DOUBLE_VECT;
@@ -79,10 +80,11 @@ void Enumeration::prepareEnumeration(enumf maxDist, const vector<FT>& subTree, b
     kMax = kEnd; // The last non-zero coordinate of x will not stay positive
   }
   else {
-    kMax = 0;
-    x[0] = enumf(1.0); // Excludes (0,...,0) from the enumeration
+    kMax = babaiFrom;
+    x[babaiFrom] = enumf(1.0); // Excludes (0,...,0) from the enumeration
   }
-  k++;
+  //~ k++;
+  k = babaiFrom;
   // now, 0 <= k <= kEnd - 1
 }
 
@@ -141,13 +143,24 @@ template<class FT>
 void Enumeration::enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluator, const vector<double>& pruning) {
   vector<FT> fX(d);
   enumf newMaxDist;
+  
+  if (babaiFrom > 0) {
+    for (int i = 0; i < d; i++) {
+      maxDists[i] = pruning[i] * maxDist;
+    }
+  }
+  
   while (true) {
     if (pruning.empty()) {
       fill(maxDists, maxDists + d, maxDist);
     }
     else {
       for (int i = 0; i < d; i++) {
-        maxDists[i] = pruning[i] * maxDist;
+        if (babaiFrom <= 0) {
+          maxDists[i] = pruning[i] * maxDist;
+        } else {
+          maxDists[i] = min(maxDist, maxDists[i]);
+        }
       }
     }
 
@@ -170,8 +183,9 @@ template<class FT>
 void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
                Evaluator<FT>& evaluator, const vector<FT>& targetCoord,
                const vector<FT>& subTree, int first, int last,
-               const vector<double>& pruning, bool dual) {
+               const vector<double>& pruning, bool dual, int babaiFrom) {
   bool solvingSVP;    // true->SVP, false->CVP
+  Enumeration::babaiFrom = babaiFrom;
   Enumeration::dual = dual;
   co = dual ? &alpha : &x;
   enumf maxDist;

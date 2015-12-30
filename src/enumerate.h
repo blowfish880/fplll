@@ -34,7 +34,7 @@ public:
   static void enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDistExpo,
                Evaluator<FT>& evaluator, const vector<FT>& targetCoord,
                const vector<FT>& subTree, int first, int last,
-               const vector<double>& pruning, bool dual = false);
+               const vector<double>& pruning, bool dual = false, int babaiFrom = 0);
   
 private:
   static const int DMAX = 150;
@@ -47,13 +47,16 @@ private:
   static int kEnd;           // The algorithm stops when k = kEnd
   static int kMax;           // Index of the last non-zero value of x (<= kEnd)
   static bool dual;
+  static int babaiFrom;
 
   // Input: x, dx, ddx, k, kMax, kEnd
   // Output: k, kMax
   static inline bool nextPosUp() {
     //FPLLL_TRACE_IN("k=" << k << " kMax=" << kMax << " kEnd=" << kEnd);
     bool result = true;
-    k++;
+    //~ k++;
+    k = max(babaiFrom, k+1);
+
     if (k < kMax) {
       ddx[k] = -ddx[k];
       dx[k] = ddx[k] - dx[k];

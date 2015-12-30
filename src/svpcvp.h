@@ -29,10 +29,10 @@ FPLLL_BEGIN_NAMESPACE
  * The result is guaranteed if method = SVPM_PROVED.
  */
 int shortestVector(IntMatrix& b, IntVect& solCoord,
-        SVPMethod method = SVPM_PROVED, int flags = SVP_DEFAULT);
+        SVPMethod method = SVPM_PROVED, int flags = SVP_DEFAULT, int babaiFrom = 0);
 
 int shortestVectorPruning(IntMatrix& b, IntVect& solCoord,
-        const vector<double>& pruning, Integer& argIntMaxDist, int flags = SVP_DEFAULT);
+        const vector<double>& pruning, Integer& argIntMaxDist, int flags = SVP_DEFAULT, int babaiFrom = 0);
 
 // Experimental. Do not use.
 int closestVector(IntMatrix& b, const IntVect& intTarget,
