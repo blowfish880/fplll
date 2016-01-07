@@ -617,4 +617,6 @@ void MatGSO<ZT, FT>::sizeIncreased() {
   }
 }
 
+template class MatGSO<Integer, Float>;
+
 FPLLL_END_NAMESPACE

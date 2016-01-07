@@ -36,6 +36,14 @@ public:
                const vector<FT>& subTree, int first, int last,
                const vector<double>& pruning, bool dual = false, int babaiFrom = 0);
   
+  static void setDumpFile(string filename) {
+    dumpSolutionFile = filename;
+    if(!std::ifstream(filename.c_str())) {
+      std::ofstream dump(filename.c_str());
+      dump.close();
+    }
+  }
+  
 private:
   static const int DMAX = 150;
   static enumf mut[DMAX][DMAX];
@@ -48,6 +56,8 @@ private:
   static int kMax;           // Index of the last non-zero value of x (<= kEnd)
   static bool dual;
   static int babaiFrom;
+  static double startTime;
+  static string dumpSolutionFile;
 
   // Input: x, dx, ddx, k, kMax, kEnd
   // Output: k, kMax
@@ -82,6 +92,15 @@ private:
   template<class FT>
   static void enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluator, const vector<double>& pruning);
   
+  static inline void dumpSolution(const string& prefix, const enumf& maxDist, const long& normExp) {
+    if (!dumpSolutionFile.empty()) {
+      ofstream dump(dumpSolutionFile.c_str(), std::ios_base::app);
+      dump << prefix << ": ";
+      dump << (cputime() - startTime) << ", " << maxDist;
+      dump << ", " << normExp << endl;
+      dump.close();
+    }
+  }
 };
 
 

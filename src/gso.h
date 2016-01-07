@@ -159,7 +159,8 @@ public:
   /**
    * Returns f = (b_i, b*_j).
    */
-  inline void getR(FT& f, int i, int j);
+  //~ inline void getR(FT& f, int i, int j);
+  void getR(FT& f, int i, int j);
 
   /** 
    * Returns expo such that mu(i, j) &lt; 2^expo for all j &lt; nColumns.

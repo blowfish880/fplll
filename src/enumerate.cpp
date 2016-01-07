@@ -37,6 +37,8 @@ int Enumeration::kMax;
 bool Enumeration::dual;
 int Enumeration::babaiFrom;
 EnumfVect *Enumeration::co;
+double Enumeration::startTime;
+string Enumeration::dumpSolutionFile;
 
 static const vector<FP_NR<double> > EMPTY_DOUBLE_VECT;
 
@@ -150,6 +152,8 @@ void Enumeration::enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluat
     }
   }
   
+  startTime = cputime();
+  dumpSolution("start\t", maxDist, normExp);
   while (true) {
     if (pruning.empty()) {
       fill(maxDists, maxDists + d, maxDist);
@@ -169,6 +173,7 @@ void Enumeration::enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluat
     }
     
     // We have found a solution
+    dumpSolution("new sol\t", newMaxDist, normExp);
     for (int j = 0; j < d; j++) {
       fX[j] = x[j];
     }
@@ -244,11 +249,11 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
   fMaxDistNorm = maxDist; // Exact
   
   if (dual) {
-    fMaxDistNorm.mul_2si(fMaxDist, maxDistExpo - normExp);
+    fMaxDist.mul_2si(fMaxDistNorm, maxDistExpo - normExp);
   } else {
     fMaxDist.mul_2si(fMaxDistNorm, normExp - maxDistExpo);
   }
-  
+  dumpSolution("done\t", maxDist, normExp);
   if (dual && !evaluator.solCoord.empty()) reverseBySwap(evaluator.solCoord, 0, d-1);
 }
 

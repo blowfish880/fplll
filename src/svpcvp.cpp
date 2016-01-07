@@ -59,31 +59,31 @@ static bool enumerateSVP(int d, MatGSO<Integer, Float>& gso, Float& maxDist,
   bool dual = (flags & SVP_DUAL);
   //~ if (d == 1 || !pruning.empty() || dual) {
   if (true) {
-    if (pruning.empty() && babaiFrom > 0) {
-      vector<double> b_pruning;
-      b_pruning.resize(d);
-      for (int k = 0; k < babaiFrom; k++) {
-        b_pruning[k] = 1.0;
-      }
-      
-      Float r, r1;
-      gso.getR(r, babaiFrom, babaiFrom);
-      int i = babaiFrom;
-      do {
-        i--;
-        gso.getR(r1, i, i);
-      } while (i > 0 && r > r1);
-      r.div(r1, maxDist);
-      for (int k = babaiFrom; k < d; k++) {
-        b_pruning[k] = min(1.0, r.get_d());
-      }
-      
-      Enumeration::enumerate(gso, maxDist, 0, evaluator, FloatVect(), FloatVect(),
-            0, d, b_pruning, dual, babaiFrom);
-    } else {
+    //~ if (pruning.empty() && babaiFrom > 0) {
+      //~ vector<double> b_pruning;
+      //~ b_pruning.resize(d);
+      //~ for (int k = 0; k < babaiFrom; k++) {
+        //~ b_pruning[k] = 1.0;
+      //~ }
+      //~ 
+      //~ Float r, r1;
+      //~ gso.getR(r, babaiFrom, babaiFrom);
+      //~ int i = babaiFrom;
+      //~ do {
+        //~ i--;
+        //~ gso.getR(r1, i, i);
+      //~ } while (i > 0 && r > r1);
+      //~ r.div(r1, maxDist);
+      //~ for (int k = babaiFrom; k < d; k++) {
+        //~ b_pruning[k] = min(1.0, r.get_d());
+      //~ }
+      //~ 
+      //~ Enumeration::enumerate(gso, maxDist, 0, evaluator, FloatVect(), FloatVect(),
+            //~ 0, d, b_pruning, dual, babaiFrom);
+    //~ } else {
       Enumeration::enumerate(gso, maxDist, 0, evaluator, FloatVect(), FloatVect(),
             0, d, pruning, dual, babaiFrom);
-    }
+    //~ }
   }
   else {
     Enumerator enumerator(d, gso.getMuMatrix(), gso.getRMatrix());
@@ -114,7 +114,8 @@ static bool enumerateSVP(int d, MatGSO<Integer, Float>& gso, Float& maxDist,
 static int shortestVectorEx(IntMatrix& b, IntVect& solCoord,
         SVPMethod method, const vector<double>& pruning, int flags,
         EvaluatorMode evalMode, const Integer& argIntMaxDist,
-        long long& solCount, int babaiFrom=0) {
+        long long& solCount, int babaiFrom=0, string dumpFile="") {
+  Enumeration::setDumpFile(dumpFile);
   // d = lattice dimension (note that it might decrease during preprocessing)
   int d = b.getRows();
   // n = dimension of the space
@@ -218,17 +219,17 @@ static int shortestVectorEx(IntMatrix& b, IntVect& solCoord,
 }
 
 int shortestVector(IntMatrix& b, IntVect& solCoord,
-                   SVPMethod method, int flags, int babaiFrom) {
+                   SVPMethod method, int flags, int babaiFrom, string dumpFile) {
   long long tmp;
   return shortestVectorEx(b, solCoord, method, vector<double>(), flags,
-          EVALMODE_SV, Integer(), tmp, babaiFrom);
+          EVALMODE_SV, Integer(), tmp, babaiFrom, dumpFile);
 }
 
 int shortestVectorPruning(IntMatrix& b, IntVect& solCoord,
-                   const vector<double>& pruning, Integer& argIntMaxDist, int flags, int babaiFrom) {
+                   const vector<double>& pruning, Integer& argIntMaxDist, int flags, int babaiFrom, string dumpFile) {
   long long tmp;
   return shortestVectorEx(b, solCoord, SVPM_FAST, pruning, flags,
-          EVALMODE_SV, argIntMaxDist, tmp, babaiFrom);
+          EVALMODE_SV, argIntMaxDist, tmp, babaiFrom, dumpFile);
 }
 
 long long countShortVectors(IntMatrix& b, const Integer& maxSqrNorm,
