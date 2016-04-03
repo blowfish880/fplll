@@ -36,6 +36,7 @@ int Enumeration::kEnd;
 int Enumeration::kMax;
 bool Enumeration::dual;
 int Enumeration::babaiFrom;
+int Enumeration::lowest;
 EnumfVect *Enumeration::co;
 double Enumeration::startTime;
 string Enumeration::dumpSolutionFile;
@@ -107,6 +108,11 @@ bool Enumeration::enumerateLoop(enumf& newMaxDist, int& newKMax) {
     /*FPLLL_TRACE("k=" << k << " x_k=" << x[k] << " center_k=" << center[k]
             << " dist_k=" << dist[k] << " r_k=" << rdiag[k]
             << " y=" << y << " newDist=" << newDist);*/
+    if (k < lowest && newDist <= LLL_DEF_DELTA*rdiag[k]) {
+      lowest = k;
+      return true;
+    }
+    
     if (newDist <= maxDists[k]) {
       k--;
       if (k < 0) {
@@ -145,6 +151,7 @@ template<class FT>
 void Enumeration::enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluator, const vector<double>& pruning) {
   vector<FT> fX(d);
   enumf newMaxDist;
+  bool setMaxDists = true;
   
   if (babaiFrom > 0) {
     for (int i = 0; i < d; i++) {
@@ -155,15 +162,18 @@ void Enumeration::enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluat
   startTime = cputime();
   dumpSolution("start\t", maxDist, normExp);
   while (true) {
-    if (pruning.empty()) {
-      fill(maxDists, maxDists + d, maxDist);
-    }
-    else {
-      for (int i = 0; i < d; i++) {
-        if (babaiFrom <= 0) {
-          maxDists[i] = pruning[i] * maxDist;
-        } else {
-          maxDists[i] = min(maxDist, maxDists[i]);
+    if (setMaxDists) {
+      if (pruning.empty()) {
+        fill(maxDists, maxDists + d, maxDist);
+      }
+      else {
+        for (int i = 0; i < d; i++) {
+          if (babaiFrom <= 0) {
+            maxDists[i] = pruning[i] * maxDist;
+          } else {
+            maxDists[i] = min(maxDist, maxDists[i]);
+            setMaxDists = false;
+          }
         }
       }
     }
@@ -178,9 +188,13 @@ void Enumeration::enumerate(enumf& maxDist, long normExp, Evaluator<FT>& evaluat
       fX[j] = x[j];
     }
     evaluator.evalSol(fX, newMaxDist, maxDist, normExp);
-    k = -1;
-    // Goes to the next step and continues the loop
-    nextPosUp();
+    if (k < 0) {
+      k = -1;
+      lowest = 0;
+      // Goes to the next step and continues the loop
+      nextPosUp();
+      setMaxDists = true;
+    }
   }
 }
 
@@ -191,6 +205,8 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
                const vector<double>& pruning, bool dual, int babaiFrom) {
   bool solvingSVP;    // true->SVP, false->CVP
   Enumeration::babaiFrom = babaiFrom;
+  Enumeration::lowest = babaiFrom;
+  FPLLL_CHECK(Enumeration::lowest >= 0, "Insertion position negativ right from the start!");
   Enumeration::dual = dual;
   co = dual ? &alpha : &x;
   enumf maxDist;
@@ -242,7 +258,7 @@ void Enumeration::enumerate(MatGSO<Integer, FT>& gso, FT& fMaxDist, long maxDist
       }
     }
   }
-
+  
   prepareEnumeration(maxDist, subTree, solvingSVP);
   enumerate(maxDist, normExp, evaluator, pruning);
   

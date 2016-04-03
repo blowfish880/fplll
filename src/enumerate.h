@@ -20,6 +20,7 @@
 #include "evaluator.h"
 
 FPLLL_BEGIN_NAMESPACE
+template<class FT> class Evaluator;
 
 static const int DMAX = 150;
 typedef enumf EnumfVect[DMAX];
@@ -43,6 +44,8 @@ public:
       dump.close();
     }
   }
+  
+  static int lowest;
   
 private:
   static const int DMAX = 150;

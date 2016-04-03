@@ -59,31 +59,31 @@ static bool enumerateSVP(int d, MatGSO<Integer, Float>& gso, Float& maxDist,
   bool dual = (flags & SVP_DUAL);
   //~ if (d == 1 || !pruning.empty() || dual) {
   if (true) {
-    //~ if (pruning.empty() && babaiFrom > 0) {
-      //~ vector<double> b_pruning;
-      //~ b_pruning.resize(d);
-      //~ for (int k = 0; k < babaiFrom; k++) {
-        //~ b_pruning[k] = 1.0;
-      //~ }
-      //~ 
-      //~ Float r, r1;
-      //~ gso.getR(r, babaiFrom, babaiFrom);
-      //~ int i = babaiFrom;
-      //~ do {
-        //~ i--;
-        //~ gso.getR(r1, i, i);
-      //~ } while (i > 0 && r > r1);
-      //~ r.div(r1, maxDist);
-      //~ for (int k = babaiFrom; k < d; k++) {
-        //~ b_pruning[k] = min(1.0, r.get_d());
-      //~ }
-      //~ 
-      //~ Enumeration::enumerate(gso, maxDist, 0, evaluator, FloatVect(), FloatVect(),
-            //~ 0, d, b_pruning, dual, babaiFrom);
-    //~ } else {
+    if (pruning.empty() && babaiFrom > 0) {
+      vector<double> b_pruning;
+      b_pruning.resize(d);
+      for (int k = 0; k < babaiFrom; k++) {
+        b_pruning[k] = 1.0;
+      }
+      
+      Float r, r1;
+      gso.getR(r, babaiFrom, babaiFrom);
+      int i = babaiFrom;
+      do {
+        i--;
+        gso.getR(r1, i, i);
+      } while (i > 0 && r > r1);
+      r.div(r1, maxDist);
+      for (int k = babaiFrom; k < d; k++) {
+        b_pruning[k] = min(1.0, r.get_d());
+      }
+      
+      Enumeration::enumerate(gso, maxDist, 0, evaluator, FloatVect(), FloatVect(),
+            0, d, b_pruning, dual, babaiFrom);
+    } else {
       Enumeration::enumerate(gso, maxDist, 0, evaluator, FloatVect(), FloatVect(),
             0, d, pruning, dual, babaiFrom);
-    //~ }
+    }
   }
   else {
     Enumerator enumerator(d, gso.getMuMatrix(), gso.getRMatrix());
@@ -221,8 +221,12 @@ static int shortestVectorEx(IntMatrix& b, IntVect& solCoord,
 int shortestVector(IntMatrix& b, IntVect& solCoord,
                    SVPMethod method, int flags, int babaiFrom, string dumpFile) {
   long long tmp;
-  return shortestVectorEx(b, solCoord, method, vector<double>(), flags,
+  int result = shortestVectorEx(b, solCoord, method, vector<double>(), flags,
           EVALMODE_SV, Integer(), tmp, babaiFrom, dumpFile);
+  Integer l; l = Enumeration::lowest;
+  //~ Integer l; l = 0;
+  solCoord.push_back(l);
+  return result;
 }
 
 int shortestVectorPruning(IntMatrix& b, IntVect& solCoord,
