@@ -235,11 +235,18 @@ bool BKZReduction<FT>::svp_preprocessing(int kappa, int block_size, const BKZPar
   bool clean = true;
 
   FPLLL_DEBUG_CHECK(param.strategies.size() > block_size);
-
+  
+  int dummy_kappa_max = num_rows;
+  if (block_size > 45 && (param.flags & BKZ_PP_KAN)) {
+    int pp_kappa = lround(log2(block_size));
+    BKZParam prepar = BKZParam(block_size - pp_kappa, param.strategies, LLL_DEF_DELTA, BKZ_GH_BND | BKZ_PP_KAN);
+    clean &= hkz(dummy_kappa_max, prepar, kappa + pp_kappa, kappa + block_size);
+    return clean;
+  }
+  
   auto &preproc = param.strategies[block_size].preprocessing_blocksizes;
   for (auto it = preproc.begin(); it != preproc.end(); ++it)
   {
-    int dummy_kappa_max = num_rows;
     BKZParam prepar = BKZParam(*it, param.strategies, LLL_DEF_DELTA, BKZ_GH_BND);
     clean &= tour(0, dummy_kappa_max, prepar, kappa, kappa + block_size);
   }
@@ -310,6 +317,7 @@ bool BKZReduction<FT>::dsvp_postprocessing(int kappa, int block_size, const vect
 template <class FT>
 bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &par, bool dual)
 {
+  //~ cerr << "kappa: " << kappa << ", blocksize: " << block_size << endl;
   bool clean = true;
 
   int lll_start = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
