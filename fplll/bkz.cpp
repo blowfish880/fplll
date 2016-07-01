@@ -359,6 +359,10 @@ bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &
     cerr << "max dist after gh bnd: " << max_dist << endl;
 
     const Pruning &pruning = get_pruning(kappa, block_size, par);
+    for (auto it = pruning.coefficients.begin(); it != pruning.coefficients.end(); ++it) {
+      cerr << *it << ", ";
+    }
+    cerr << endl;
 
     vector<FT>& sol_coord = evaluator.solCoord;
     sol_coord.clear();
