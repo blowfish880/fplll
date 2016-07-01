@@ -205,7 +205,7 @@ bool BKZReduction<FT>::svp_postprocessing(int kappa, int block_size, const vecto
     // Yes, it is another vector
     FPLLL_DEBUG_CHECK(i_vector != -1 && i_vector != 0);
     m.moveRow(kappa + i_vector, kappa);
-    if (!lll_obj.sizeReduction(kappa, kappa + 1))
+    if (!lll_obj.lll(kappa, kappa, kappa + block_size))
       throw lll_obj.status;
   }
   else
@@ -317,7 +317,6 @@ bool BKZReduction<FT>::dsvp_postprocessing(int kappa, int block_size, const vect
 template <class FT>
 bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &par, bool dual)
 {
-  cerr << "kappa: " << kappa << ", blocksize: " << block_size << endl;
   bool clean = true;
 
   int lll_start = (par.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
@@ -334,7 +333,6 @@ bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &
 
   while (remaining_probability > 1. - par.min_success_probability)
   {
-    cerr << "remaining probability: " << remaining_probability << endl;
     if (rerandomize)
     {
       rerandomize_block(kappa + 1, kappa + block_size, par.rerandomization_density);
@@ -350,29 +348,20 @@ bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &
       max_dist_expo *= -1;
     }
     max_dist *= delta;
-    cerr << "max dist before gh bnd: " << max_dist << endl;
     if ((par.flags & BKZ_GH_BND) && block_size > 30)
     {
       FT root_det = get_root_det(m, kappa, kappa + block_size);
       compute_gaussian_heuristic(max_dist, max_dist_expo, block_size, root_det, par.gh_factor);
     }
-    cerr << "max dist after gh bnd: " << max_dist << endl;
 
     const Pruning &pruning = get_pruning(kappa, block_size, par);
-    for (auto it = pruning.coefficients.begin(); it != pruning.coefficients.end(); ++it) {
-      cerr << *it << ", ";
-    }
-    cerr << endl;
 
     vector<FT>& sol_coord = evaluator.solCoord;
     sol_coord.clear();
     Enumeration<FT> Enum(m, evaluator);
-    cerr << "Enumerartion on " << kappa << " to " << (kappa + block_size) << endl;
-    dump_gso("gso.log", "pre enum: ");
     Enum.enumerate( kappa, kappa + block_size, max_dist, max_dist_expo, vector<FT>(), vector<enumxt>(),
                     pruning.coefficients, dual);
     nodes += Enum.getNodes();
-    cerr << "done after searchig through " << Enum.getNodes() << " nodes" << endl;
 
     if (!sol_coord.empty())
     {
@@ -551,7 +540,6 @@ template <class FT> bool BKZReduction<FT>::bkz()
     throw std::runtime_error("Invalid flags: SD-BKZ and Slide reduction are mutually exclusive!");
   }
 
-  dump_gso("gso.log", "in");
   if (flags & BKZ_DUMP_GSO)
   {
     std::ostringstream prefix;
