@@ -368,6 +368,7 @@ bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &
     sol_coord.clear();
     Enumeration<FT> Enum(m, evaluator);
     cerr << "Enumerartion on " << kappa << " to " << (kappa + block_size) << endl;
+    dump_gso("gso.log", "pre enum: ");
     Enum.enumerate( kappa, kappa + block_size, max_dist, max_dist_expo, vector<FT>(), vector<enumxt>(),
                     pruning.coefficients, dual);
     nodes += Enum.getNodes();
@@ -550,6 +551,7 @@ template <class FT> bool BKZReduction<FT>::bkz()
     throw std::runtime_error("Invalid flags: SD-BKZ and Slide reduction are mutually exclusive!");
   }
 
+  dump_gso("gso.log", "in");
   if (flags & BKZ_DUMP_GSO)
   {
     std::ostringstream prefix;
