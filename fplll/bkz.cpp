@@ -355,7 +355,7 @@ bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &
     }
 
     const Pruning &pruning = (block_size > 45 && (param.flags & BKZ_PP_KAN)) ?
-                              Pruning::LinearPruning(block_size, block_size - 1)
+                              Pruning::LinearPruning(block_size, block_size - lround(log2(block_size)))
                               : get_pruning(kappa, block_size, par);
 
     vector<FT>& sol_coord = evaluator.solCoord;
