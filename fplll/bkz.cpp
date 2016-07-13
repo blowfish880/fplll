@@ -354,7 +354,9 @@ bool BKZReduction<FT>::svp_reduction(int kappa, int block_size, const BKZParam &
       compute_gaussian_heuristic(max_dist, max_dist_expo, block_size, root_det, par.gh_factor);
     }
 
-    const Pruning &pruning = get_pruning(kappa, block_size, par);
+    const Pruning &pruning = (block_size > 45 && (param.flags & BKZ_PP_KAN)) ?
+                              Pruning::LinearPruning(block_size, block_size - 1)
+                              : get_pruning(kappa, block_size, par);
 
     vector<FT>& sol_coord = evaluator.solCoord;
     sol_coord.clear();
