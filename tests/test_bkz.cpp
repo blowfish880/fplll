@@ -297,7 +297,7 @@ int main(int argc, char ** argv)
   status |= test_filename<mpz_t>("lattices/example_in", 10, FT_DOUBLE, BKZ_SLD_RED);
   */
   
-  status |= test_int_rel_flags<mpz_t>(d, 1000, 35, FT_DOUBLE, BKZ_DEFAULT | BKZ_AUTO_ABORT);
+  status |= test_int_rel_flags<mpz_t>(d, 1000, b, FT_DOUBLE, BKZ_DEFAULT | BKZ_AUTO_ABORT);
   
   if (status == 0)
   {
