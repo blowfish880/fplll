@@ -216,10 +216,28 @@ int test_int_rel(int d, int b, const int block_size, FloatType float_type = FT_D
   A.gen_intrel(b);
   B          = A;
   int status = 0;
-  status |= test_bkz<ZT>(A, block_size, float_type, flags | BKZ_VERBOSE, prec);
-  status |= test_bkz_param<ZT>(B, block_size);
-  status |= test_bkz_param_linear_pruning<ZT>(B, block_size);
-  status |= test_bkz_param_pruning<ZT>(B, block_size);
+  //~ status |= test_bkz<ZT>(A, block_size, float_type, flags | BKZ_VERBOSE, prec);
+  status |= test_bkz_param<ZT>(B, block_size, flags | BKZ_VERBOSE);
+  //~ status |= test_bkz_param_linear_pruning<ZT>(B, block_size);
+  //~ status |= test_bkz_param_pruning<ZT>(B, block_size);
+  return status;
+}
+
+template <class ZT>
+int test_int_rel_flags(int d, int b, const int block_size, FloatType float_type = FT_DEFAULT,
+                 int flags = BKZ_DEFAULT, int prec = 0)
+{
+  ZZ_mat<ZT> A, B, C, D;
+  A.resize(d, d + 1);
+  A.gen_intrel(b);
+  B          = A;
+  C          = A;
+  D          = A;
+  int status = 0;
+  status |= test_bkz_param_pruning<ZT>(A, block_size, flags | BKZ_VERBOSE);
+  status |= test_bkz_param_pruning<ZT>(B, block_size, flags | BKZ_VERBOSE | BKZ_BOUNDED_LLL);
+  status |= test_bkz_param_pruning<ZT>(C, block_size, flags | BKZ_VERBOSE | BKZ_NO_LLL);
+  status |= test_bkz_param_pruning<ZT>(D, block_size, flags | BKZ_VERBOSE | BKZ_BOUNDED_LLL | BKZ_NO_LLL);
   return status;
 }
 
@@ -230,10 +248,13 @@ int test_linear_dep()
   return test_bkz_param<mpz_t>(A, 3);
 }
 
-int main(int /*argc*/, char ** /*argv*/)
+//~ int main(int /*argc*/, char ** /*argv*/)
+int main(int argc, char ** argv)
 {
-
   int status = 0;
+  int d = atoi(argv[1]);
+  int b = atoi(argv[2]);
+  /*
   status |= test_linear_dep();
   status |= test_filename<mpz_t>("lattices/dim55_in", 10, FT_DEFAULT, BKZ_DEFAULT | BKZ_AUTO_ABORT);
 #ifdef FPLLL_HAVE_QD
@@ -274,7 +295,10 @@ int main(int /*argc*/, char ** /*argv*/)
   status |= test_filename<mpz_t>("lattices/example_in", 10, FT_DOUBLE);
   status |= test_filename<mpz_t>("lattices/example_in", 10, FT_DOUBLE, BKZ_SD_VARIANT);
   status |= test_filename<mpz_t>("lattices/example_in", 10, FT_DOUBLE, BKZ_SLD_RED);
-
+  */
+  
+  status |= test_int_rel_flags<mpz_t>(d, 1000, 35, FT_DOUBLE, BKZ_DEFAULT | BKZ_AUTO_ABORT);
+  
   if (status == 0)
   {
     cerr << "All tests passed." << endl;
