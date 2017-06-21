@@ -8,7 +8,7 @@ raw_out_files = "raw_{0}_{1}_{2}.txt"
 
 dims = [80]
 blocks = [35]
-N = 1
+N = 2
 
 if not os.path.isdir(result_dir):
 	os.makedirs(result_dir)

@@ -216,10 +216,10 @@ int test_int_rel(int d, int b, const int block_size, FloatType float_type = FT_D
   A.gen_intrel(b);
   B          = A;
   int status = 0;
-  //~ status |= test_bkz<ZT>(A, block_size, float_type, flags | BKZ_VERBOSE, prec);
+  status |= test_bkz<ZT>(A, block_size, float_type, flags | BKZ_VERBOSE, prec);
   status |= test_bkz_param<ZT>(B, block_size, flags | BKZ_VERBOSE);
-  //~ status |= test_bkz_param_linear_pruning<ZT>(B, block_size);
-  //~ status |= test_bkz_param_pruning<ZT>(B, block_size);
+  status |= test_bkz_param_linear_pruning<ZT>(B, block_size);
+  status |= test_bkz_param_pruning<ZT>(B, block_size);
   return status;
 }
 
@@ -254,6 +254,8 @@ int main(int argc, char ** argv)
   int status = 0;
   int d = atoi(argv[1]);
   int b = atoi(argv[2]);
+  int seed = atoi(argv[3]);
+  RandGen::init_with_seed(seed);
   /*
   status |= test_linear_dep();
   status |= test_filename<mpz_t>("lattices/dim55_in", 10, FT_DEFAULT, BKZ_DEFAULT | BKZ_AUTO_ABORT);
