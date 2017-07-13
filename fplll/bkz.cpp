@@ -105,9 +105,11 @@ bool BKZReduction<ZT, FT>::svp_preprocessing(int kappa, int block_size, const BK
   FPLLL_DEBUG_CHECK(param.strategies.size() > block_size);
 
   int lll_start = (param.flags & BKZ_BOUNDED_LLL) ? kappa : 0;
-  if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, 0))
+  if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, lll_start))
   {
-    throw std::runtime_error(RED_STATUS_STR[lll_obj.status]);
+    if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, 0)) {
+      throw std::runtime_error(RED_STATUS_STR[lll_obj.status]);
+    }
   }
   if (lll_obj.n_swaps > 0)
     clean = false;
@@ -116,7 +118,7 @@ bool BKZReduction<ZT, FT>::svp_preprocessing(int kappa, int block_size, const BK
   for (auto it = preproc.begin(); it != preproc.end(); ++it)
   {
     int dummy_kappa_max = num_rows;
-    BKZParam prepar     = BKZParam(*it, param.strategies, LLL_DEF_DELTA, BKZ_GH_BND);
+    BKZParam prepar     = BKZParam(*it, param.strategies, LLL_DEF_DELTA, BKZ_GH_BND | BKZ_BOUNDED_LLL);
     clean &= tour(0, dummy_kappa_max, prepar, kappa, kappa + block_size);
   }
 
