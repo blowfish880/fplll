@@ -273,6 +273,20 @@ bool BKZReduction<ZT, FT>::svp_postprocessing_generic(int kappa, int block_size,
 }
 
 template <class ZT, class FT>
+bool BKZReduction<ZT, FT>::all_r_positive(int kappa, int block_size) {
+  FT fr;
+  long rexpo;
+  for (int i = kappa; i < kappa + block_size; ++i)
+  {
+    fr      = m.get_r_exp(i, i, rexpo);
+    if(fr <= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class ZT, class FT>
 bool BKZReduction<ZT, FT>::svp_reduction(int kappa, int block_size, const BKZParam &par, bool dual)
 {
   int first = dual ? kappa + block_size - 1 : kappa;
@@ -328,6 +342,7 @@ bool BKZReduction<ZT, FT>::svp_reduction(int kappa, int block_size, const BKZPar
     FPLLL_DEBUG_CHECK(pruning.metric == PRUNER_METRIC_PROBABILITY_OF_SHORTEST)
     evaluator.solutions.clear();
     Enumeration<ZT, FT> enum_obj(m, evaluator);
+    FPLLL_CHECK(all_r_positive(kappa, block_size), "Malformed GSO: infinite loop in enum")
     enum_obj.enumerate(kappa, kappa + block_size, max_dist, max_dist_expo, vector<FT>(),
                        vector<enumxt>(), pruning.coefficients, dual);
     nodes += enum_obj.get_nodes();

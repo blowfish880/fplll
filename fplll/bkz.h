@@ -499,6 +499,8 @@ private:
   // the window size (simply returns when the first block is reduced)
   bool trunc_dtour(const BKZParam &param, int min_row, int max_row);
 
+
+  bool all_r_positive(int kappa, int block_size);
   const BKZParam &param;
   int num_rows;
 
