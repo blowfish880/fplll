@@ -124,11 +124,8 @@ bool BKZReduction<ZT, FT>::svp_preprocessing(int kappa, int block_size, const BK
   }
   
   if (!all_r_positive(kappa, block_size)) {
-    if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, lll_start))
-    {
-      if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, 0)) {
-        throw std::runtime_error(RED_STATUS_STR[lll_obj.status]);
-      }
+    if (!lll_obj.lll(0, 0, kappa + block_size, 0)) {
+      throw std::runtime_error(RED_STATUS_STR[lll_obj.status]);
     }
   }
   
