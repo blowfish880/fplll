@@ -128,6 +128,8 @@ bool BKZReduction<ZT, FT>::svp_preprocessing(int kappa, int block_size, const BK
       throw std::runtime_error(RED_STATUS_STR[lll_obj.status]);
     }
   }
+  if (lll_obj.n_swaps > 0)
+    clean = false;
   
   return clean;
 }
