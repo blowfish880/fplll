@@ -122,7 +122,16 @@ bool BKZReduction<ZT, FT>::svp_preprocessing(int kappa, int block_size, const BK
     BKZParam prepar     = BKZParam(*it, param.strategies, LLL_DEF_DELTA, BKZ_GH_BND | BKZ_BOUNDED_LLL);
     clean &= tour(0, dummy_kappa_max, prepar, kappa, kappa + block_size);
   }
-
+  
+  if (!all_r_positive(kappa, block_size)) {
+    if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, lll_start))
+    {
+      if (!lll_obj.lll(lll_start, lll_start, kappa + block_size, 0)) {
+        throw std::runtime_error(RED_STATUS_STR[lll_obj.status]);
+      }
+    }
+  }
+  
   return clean;
 }
 
@@ -342,7 +351,7 @@ bool BKZReduction<ZT, FT>::svp_reduction(int kappa, int block_size, const BKZPar
     FPLLL_DEBUG_CHECK(pruning.metric == PRUNER_METRIC_PROBABILITY_OF_SHORTEST)
     evaluator.solutions.clear();
     Enumeration<ZT, FT> enum_obj(m, evaluator);
-    FPLLL_CHECK(all_r_positive(kappa, block_size), "Malformed GSO: infinite loop in enum")
+    FPLLL_CHECK(all_r_positive(kappa, block_size), "Malformed GSO: infinite loop in enum");
     enum_obj.enumerate(kappa, kappa + block_size, max_dist, max_dist_expo, vector<FT>(),
                        vector<enumxt>(), pruning.coefficients, dual);
     nodes += enum_obj.get_nodes();
