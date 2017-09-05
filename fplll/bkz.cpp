@@ -116,10 +116,15 @@ bool BKZReduction<ZT, FT>::svp_preprocessing(int kappa, int block_size, const BK
 
   // run one tour of recursive preprocessing
   auto &preproc = param.strategies[block_size].preprocessing_block_sizes;
+  int flags = BKZ_GH_BND;
+  if (block_size >= 60) {
+    flags |= BKZ_BOUNDED_LLL;
+  }
+  
   for (auto it = preproc.begin(); it != preproc.end(); ++it)
   {
     int dummy_kappa_max = num_rows;
-    BKZParam prepar     = BKZParam(*it, param.strategies, LLL_DEF_DELTA, BKZ_GH_BND | BKZ_BOUNDED_LLL);
+    BKZParam prepar     = BKZParam(*it, param.strategies, LLL_DEF_DELTA, flags);
     clean &= tour(0, dummy_kappa_max, prepar, kappa, kappa + block_size);
   }
   
