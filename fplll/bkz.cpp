@@ -288,12 +288,23 @@ bool BKZReduction<ZT, FT>::svp_postprocessing_generic(int kappa, int block_size,
 template <class ZT, class FT>
 bool BKZReduction<ZT, FT>::all_r_positive(int kappa, int block_size) {
   FT fr;
-  long rexpo;
+  long rexpo, expo;
+  long max_expo;
   for (int i = kappa; i < kappa + block_size; ++i)
   {
     fr      = m.get_r_exp(i, i, rexpo);
     if(fr <= 0) {
       return false;
+    }
+    expo = rexpo + fr.exponent();
+    if (i == kappa || expo > max_expo) {
+      max_expo = expo;
+    } else {
+      if (max_expo - expo > 50) {
+        // looks like a sharp drop in the GSO, 
+        // which could be a sign of numerical issues
+        return false;
+      }
     }
   }
   return true;
@@ -303,7 +314,7 @@ template <class ZT, class FT>
 bool BKZReduction<ZT, FT>::svp_reduction(int kappa, int block_size, const BKZParam &par, bool dual)
 {
   int first = dual ? kappa + block_size - 1 : kappa;
-
+  
   // ensure we are computing something sensible.
   // note that the size reduction here is required, since
   // we're calling this function on unreduced blocks at times
@@ -355,9 +366,10 @@ bool BKZReduction<ZT, FT>::svp_reduction(int kappa, int block_size, const BKZPar
     FPLLL_DEBUG_CHECK(pruning.metric == PRUNER_METRIC_PROBABILITY_OF_SHORTEST)
     evaluator.solutions.clear();
     Enumeration<ZT, FT> enum_obj(m, evaluator);
-    FPLLL_CHECK(all_r_positive(kappa, block_size), "Malformed GSO: infinite loop in enum");
+    // FPLLL_CHECK(all_r_positive(kappa, block_size), "Malformed GSO: infinite loop in enum");
     enum_obj.enumerate(kappa, kappa + block_size, max_dist, max_dist_expo, vector<FT>(),
                        vector<enumxt>(), pruning.coefficients, dual);
+    
     nodes += enum_obj.get_nodes();
 
     if (!evaluator.empty())
@@ -382,7 +394,7 @@ bool BKZReduction<ZT, FT>::svp_reduction(int kappa, int block_size, const BKZPar
   // preprocessing can have changed things but we don't know if it made progress)
   long new_first_expo;
   FT new_first = m.get_r_exp(first, first, new_first_expo);
-  new_first.mul_2si(new_first, new_first_expo - old_first_expo);
+  new_first.mul_2si(new_first, new_first_expo - old_first_expo); 
   return (dual) ? (old_first >= new_first) : (old_first <= new_first);
 }
 
@@ -598,7 +610,7 @@ template <class ZT, class FT> bool BKZReduction<ZT, FT>::bkz()
   cputime_start = cputime();
 
   m.discover_all_rows();
-
+  
   if (sld)
   {
     m.update_gso();
